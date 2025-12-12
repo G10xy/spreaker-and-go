@@ -5,16 +5,6 @@ It supports multiple output formats:
   - table: Human-readable aligned columns (default)
   - json:  Machine-readable JSON output
   - plain: Simple text, one item per line
-
-Usage:
-
-	formatter := output.New("table")
-	formatter.PrintShows(shows)
-
-The format can be set via:
-  - CLI flag: --output json
-  - Config file: output_format: json
-  - Environment: SPREAKER_OUTPUT=json
 */
 package output
 
@@ -30,7 +20,7 @@ import (
 	"github.com/G10xy/spreaker-and-go/pkg/models"
 )
 
-// Format represents the output format type
+
 type Format string
 
 const (
@@ -39,22 +29,17 @@ const (
 	FormatPlain Format = "plain"
 )
 
-// Formatter handles output formatting
 type Formatter struct {
 	format Format
 	writer io.Writer
 }
 
 // New creates a new Formatter with the specified format.
-// Valid formats: "table", "json", "plain"
-// Defaults to "table" if invalid format is provided.
 func New(format string) *Formatter {
-	f := Format(strings.ToLower(format))
+	f := Format(strings.ToLower(strings.TrimSpace(format)))
 
-	// Validate format, default to table
 	switch f {
 	case FormatTable, FormatJSON, FormatPlain:
-		// valid
 	default:
 		f = FormatTable
 	}
@@ -65,16 +50,15 @@ func New(format string) *Formatter {
 	}
 }
 
-// SetWriter sets a custom writer (useful for testing)
-func (f *Formatter) SetWriter(w io.Writer) {
-	f.writer = w
+func (f *Formatter) tabw() *tabwriter.Writer {
+    return tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
 }
 
 // -----------------------------------------------------------------------------
 // User Output
 // -----------------------------------------------------------------------------
 
-// PrintUser prints a single user
+
 func (f *Formatter) PrintUser(user *models.User) {
 	switch f.format {
 	case FormatJSON:
@@ -86,7 +70,6 @@ func (f *Formatter) PrintUser(user *models.User) {
 	}
 }
 
-// PrintUsers prints a list of users
 func (f *Formatter) PrintUsers(users []models.User) {
 	switch f.format {
 	case FormatJSON:
@@ -101,7 +84,7 @@ func (f *Formatter) PrintUsers(users []models.User) {
 }
 
 func (f *Formatter) printUserTable(user *models.User) {
-	tw := tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
+	tw := f.tabw()
 
 	fmt.Fprintf(tw, "ID:\t%d\n", user.UserID)
 	fmt.Fprintf(tw, "Username:\t%s\n", user.Username)
@@ -113,7 +96,6 @@ func (f *Formatter) printUserTable(user *models.User) {
 	fmt.Fprintf(tw, "URL:\t%s\n", user.SiteURL)
 
 	if user.Description != "" {
-		// Truncate long descriptions
 		desc := user.Description
 		if len(desc) > 80 {
 			desc = desc[:77] + "..."
@@ -125,13 +107,11 @@ func (f *Formatter) printUserTable(user *models.User) {
 }
 
 func (f *Formatter) printUsersTable(users []models.User) {
-	tw := tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
+	tw := f.tabw()
 
-	// Header
 	fmt.Fprintln(tw, "ID\tUSERNAME\tNAME\tFOLLOWERS")
 	fmt.Fprintln(tw, "--\t--------\t----\t---------")
 
-	// Rows
 	for _, u := range users {
 		fmt.Fprintf(tw, "%d\t%s\t%s\t%d\n",
 			u.UserID,
@@ -148,7 +128,7 @@ func (f *Formatter) printUsersTable(users []models.User) {
 // Show Output
 // -----------------------------------------------------------------------------
 
-// PrintShow prints a single show
+
 func (f *Formatter) PrintShow(show *models.Show) {
 	switch f.format {
 	case FormatJSON:
@@ -160,7 +140,6 @@ func (f *Formatter) PrintShow(show *models.Show) {
 	}
 }
 
-// PrintShows prints a list of shows
 func (f *Formatter) PrintShows(shows []models.Show) {
 	switch f.format {
 	case FormatJSON:
@@ -175,7 +154,7 @@ func (f *Formatter) PrintShows(shows []models.Show) {
 }
 
 func (f *Formatter) printShowTable(show *models.Show) {
-	tw := tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
+	tw := f.tabw()
 
 	fmt.Fprintf(tw, "ID:\t%d\n", show.ShowID)
 	fmt.Fprintf(tw, "Title:\t%s\n", show.Title)
@@ -195,14 +174,14 @@ func (f *Formatter) printShowTable(show *models.Show) {
 	}
 
 	if show.LastEpisodeAt != nil {
-		fmt.Fprintf(tw, "Last Episode:\t%s\n", show.LastEpisodeAt.Format("2006-01-02"))
+		fmt.Fprintf(tw, "Last Episode:\t%s\n", show.LastEpisodeAt.Format(time.DateTime))
 	}
 
 	tw.Flush()
 }
 
 func (f *Formatter) printShowsTable(shows []models.Show) {
-	tw := tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
+	tw := f.tabw()
 
 	// Header
 	fmt.Fprintln(tw, "ID\tTITLE\tEPISODES\tFOLLOWERS\tPLAYS")
@@ -226,7 +205,6 @@ func (f *Formatter) printShowsTable(shows []models.Show) {
 // Episode Output
 // -----------------------------------------------------------------------------
 
-// PrintEpisode prints a single episode
 func (f *Formatter) PrintEpisode(episode *models.Episode) {
 	switch f.format {
 	case FormatJSON:
@@ -238,7 +216,6 @@ func (f *Formatter) PrintEpisode(episode *models.Episode) {
 	}
 }
 
-// PrintEpisodes prints a list of episodes
 func (f *Formatter) PrintEpisodes(episodes []models.Episode) {
 	switch f.format {
 	case FormatJSON:
@@ -253,7 +230,7 @@ func (f *Formatter) PrintEpisodes(episodes []models.Episode) {
 }
 
 func (f *Formatter) printEpisodeTable(episode *models.Episode) {
-	tw := tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
+	tw := f.tabw()
 
 	fmt.Fprintf(tw, "ID:\t%d\n", episode.EpisodeID)
 	fmt.Fprintf(tw, "Title:\t%s\n", episode.Title)
@@ -267,7 +244,7 @@ func (f *Formatter) printEpisodeTable(episode *models.Episode) {
 	fmt.Fprintf(tw, "URL:\t%s\n", episode.SiteURL)
 
 	if episode.PublishedAt != nil {
-		fmt.Fprintf(tw, "Published:\t%s\n", episode.PublishedAt.Format("2006-01-02 15:04"))
+		fmt.Fprintf(tw, "Published:\t%s\n", episode.PublishedAt.Format(time.DateTime))
 	}
 
 	if len(episode.Tags) > 0 {
@@ -286,7 +263,7 @@ func (f *Formatter) printEpisodeTable(episode *models.Episode) {
 }
 
 func (f *Formatter) printEpisodesTable(episodes []models.Episode) {
-	tw := tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
+	tw := f.tabw()
 
 	// Header
 	fmt.Fprintln(tw, "ID\tTITLE\tDURATION\tPLAYS\tSTATUS\tPUBLISHED")
@@ -296,7 +273,7 @@ func (f *Formatter) printEpisodesTable(episodes []models.Episode) {
 	for _, e := range episodes {
 		published := "-"
 		if e.PublishedAt != nil {
-			published = e.PublishedAt.Format("2006-01-02")
+			published = e.PublishedAt.Format(time.DateTime)
 		}
 
 		fmt.Fprintf(tw, "%d\t%s\t%s\t%d\t%s\t%s\n",
@@ -330,7 +307,7 @@ func (f *Formatter) PrintStatistics(stats *models.Statistics) {
 }
 
 func (f *Formatter) printStatisticsTable(stats *models.Statistics) {
-	tw := tabwriter.NewWriter(f.writer, 0, 0, 2, ' ', 0)
+	tw := f.tabw()
 
 	fmt.Fprintf(tw, "Plays:\t%d\n", stats.Plays)
 	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.Downloads)
@@ -344,17 +321,14 @@ func (f *Formatter) printStatisticsTable(stats *models.Statistics) {
 // Generic Output
 // -----------------------------------------------------------------------------
 
-// PrintMessage prints a simple message
 func (f *Formatter) PrintMessage(msg string) {
 	fmt.Fprintln(f.writer, msg)
 }
 
-// PrintError prints an error message to stderr
 func (f *Formatter) PrintError(err error) {
 	fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 }
 
-// PrintSuccess prints a success message
 func (f *Formatter) PrintSuccess(msg string) {
 	fmt.Fprintf(f.writer, "✓ %s\n", msg)
 }
@@ -363,14 +337,12 @@ func (f *Formatter) PrintSuccess(msg string) {
 // Helpers
 // -----------------------------------------------------------------------------
 
-// printJSON outputs any value as formatted JSON
 func (f *Formatter) printJSON(v interface{}) {
 	encoder := json.NewEncoder(f.writer)
 	encoder.SetIndent("", "  ")
 	encoder.Encode(v)
 }
 
-// truncate shortens a string to max length, adding "..." if truncated
 func truncate(s string, max int) string {
 	if len(s) <= max {
 		return s
