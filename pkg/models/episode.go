@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"time"
 )
 
 type Episode struct {
@@ -41,7 +40,7 @@ type Episode struct {
 
 	Tags []string `json:"tags,omitempty"`
 
-	PublishedAt *time.Time `json:"published_at,omitempty"`
+	PublishedAt *CustomTime `json:"published_at,omitempty"`
 
 	EncodingStatus string `json:"encoding_status"`
 

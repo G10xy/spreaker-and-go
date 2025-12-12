@@ -1,6 +1,5 @@
 package models
 
-import "time"
 
 type Show struct {
 	ShowID int `json:"show_id"`
@@ -35,9 +34,9 @@ type Show struct {
 
 	Explicit bool `json:"explicit"`
 
-	LastEpisodeAt *time.Time `json:"last_episode_at,omitempty"`
+	LastEpisodeAt *CustomTime `json:"last_episode_at,omitempty"`
 
-	CreatedAt *time.Time `json:"created_at,omitempty"`
+	CreatedAt *CustomTime `json:"created_at,omitempty"`
 }
 
 type ShowResponse struct {
