@@ -1,6 +1,8 @@
 module github.com/G10xy/spreaker-and-go
 
-go 1.18
+go 1.23.0
+
+toolchain go1.24.0
 
 require (
 	github.com/spf13/cobra v1.10.2
