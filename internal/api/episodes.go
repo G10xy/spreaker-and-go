@@ -91,6 +91,71 @@ func (c *Client) UploadEpisode(showID int, params UploadEpisodeParams) (*models.
 	return &resp.Episode, nil
 }
 
+// CreateDraftEpisodeParams contains parameters for creating a draft episode.
+type CreateDraftEpisodeParams struct {
+	// Required
+	Title  string // Episode title
+	ShowID int    // Show ID where the episode will belong
+
+	// Optional
+	Description     string   // Episode description/show notes
+	Tags            []string // Tags for the episode
+	Explicit        bool     // Contains explicit content
+	DownloadEnabled bool     // Allow downloads
+	Hidden          bool     // Hidden/private episode
+}
+
+// CreateDraftEpisode creates a new draft episode without an audio file.
+// The audio file can be uploaded later using UpdateEpisode with a media_file.
+// API: POST /v2/episodes/drafts
+func (c *Client) CreateDraftEpisode(params CreateDraftEpisodeParams) (*models.Episode, error) {
+	if c.Token == "" {
+		return nil, fmt.Errorf("authentication required")
+	}
+
+	if params.Title == "" {
+		return nil, fmt.Errorf("title is required")
+	}
+	if params.ShowID == 0 {
+		return nil, fmt.Errorf("show_id is required")
+	}
+
+	fields := map[string]string{
+		"title":   params.Title,
+		"show_id": fmt.Sprintf("%d", params.ShowID),
+	}
+
+	if params.Description != "" {
+		fields["description"] = params.Description
+	}
+	if len(params.Tags) > 0 {
+		tagStr := ""
+		for i, tag := range params.Tags {
+			if i > 0 {
+				tagStr += ","
+			}
+			tagStr += tag
+		}
+		fields["tags"] = tagStr
+	}
+	if params.Explicit {
+		fields["explicit"] = "true"
+	}
+	if params.DownloadEnabled {
+		fields["download_enabled"] = "true"
+	}
+	if params.Hidden {
+		fields["hidden"] = "true"
+	}
+
+	var resp models.EpisodeResponse
+	if err := c.PostForm("/episodes/drafts", fields, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp.Episode, nil
+}
+
 type UpdateEpisodeParams struct {
 	Title           *string
 	Description     *string
@@ -200,11 +265,62 @@ func (c *Client) UnlikeEpisode(userID, episodeID int) error {
 	return c.Delete(path, nil)
 }
 
+// CheckUserLikesEpisode checks if a user has liked a specific episode.
+// Returns true if the user likes the episode, false otherwise.
+// API: GET /v2/users/{user_id}/likes/{episode_id}
+func (c *Client) CheckUserLikesEpisode(userID, episodeID int) (bool, error) {
+	path := fmt.Sprintf("/users/%d/likes/%d", userID, episodeID)
+
+	var resp models.EpisodeResponse
+	if err := c.Get(path, nil, &resp); err != nil {
+		// Check if it's a 404 (not liked)
+		if apiErr, ok := err.(*APIError); ok && apiErr.IsNotFound() {
+			return false, nil
+		}
+		return false, err
+	}
+
+	return true, nil
+}
+
+// GetEpisodeLikes retrieves the list of users who liked an episode.
+// API: GET /v2/episodes/{episode_id}/likes
+func (c *Client) GetEpisodeLikes(episodeID int, pagination PaginationParams) (*PaginatedResult[models.User], error) {
+	path := fmt.Sprintf("/episodes/%d/likes", episodeID)
+	return GetPaginated[models.User](c, path, pagination.ToMap())
+}
+
 // GetLikedEpisodes retrieves the user's liked episodes.
 // API: GET /v2/users/{user_id}/likes
 func (c *Client) GetLikedEpisodes(userID int, pagination PaginationParams) (*PaginatedResult[models.Episode], error) {
 	path := fmt.Sprintf("/users/%d/likes", userID)
 	return GetPaginated[models.Episode](c, path, pagination.ToMap())
+}
+
+// BookmarkEpisode adds an episode to the user's bookmarks.
+// Note: You can only bookmark episodes on your own account, so userID must match
+// the owner of the token used for authentication.
+// API: PUT /v2/users/{user_id}/bookmarks/{episode_id}
+func (c *Client) BookmarkEpisode(userID, episodeID int) error {
+	if c.Token == "" {
+		return fmt.Errorf("authentication required")
+	}
+
+	path := fmt.Sprintf("/users/%d/bookmarks/%d", userID, episodeID)
+	return c.Put(path, nil)
+}
+
+// UnbookmarkEpisode removes an episode from the user's bookmarks.
+// Note: You can only unbookmark episodes on your own account, so userID must match
+// the owner of the token used for authentication.
+// API: DELETE /v2/users/{user_id}/bookmarks/{episode_id}
+func (c *Client) UnbookmarkEpisode(userID, episodeID int) error {
+	if c.Token == "" {
+		return fmt.Errorf("authentication required")
+	}
+
+	path := fmt.Sprintf("/users/%d/bookmarks/%d", userID, episodeID)
+	return c.Delete(path, nil)
 }
 
 // GetEpisodeDownloadURL retrieves the download URL for an episode.
