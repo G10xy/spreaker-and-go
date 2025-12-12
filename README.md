@@ -4,7 +4,7 @@ A command-line interface for the [Spreaker](https://www.spreaker.com) podcast pl
 
 ## Overview
 
-`spreaker-cli` allows you to manage your Spreaker podcasts directly from the terminal. You can list shows, upload episodes, view statistics, and more — without opening a browser.
+`spreaker-and-go` allows you to manage your Spreaker podcasts directly from the terminal. You can list shows, upload episodes, view statistics, and more — without opening a browser.
 
 ## Features
 
@@ -22,7 +22,7 @@ Requires Go 1.21 or later.
 
 ```bash
 git clone https://github.com/G10xy/spreaker-and-go.git
-cd spreaker-cli
+cd spreaker-and-go
 go build -o spreaker ./cmd/spreaker
 
 # Optional: move to PATH
