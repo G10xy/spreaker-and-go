@@ -23,7 +23,6 @@ func (c *Client) GetEpisode(episodeID int) (*models.Episode, error) {
 	return &resp.Episode, nil
 }
 
-// UploadEpisodeParams contains parameters for uploading a new episode.
 type UploadEpisodeParams struct {
 	// Required
 	Title     string // Episode title
@@ -39,7 +38,6 @@ type UploadEpisodeParams struct {
 }
 
 // UploadEpisode uploads a new episode to a show.
-// Requires authentication and show ownership.
 // API: POST /v2/shows/{show_id}/episodes
 func (c *Client) UploadEpisode(showID int, params UploadEpisodeParams) (*models.Episode, error) {
 	if c.Token == "" {
@@ -55,7 +53,6 @@ func (c *Client) UploadEpisode(showID int, params UploadEpisodeParams) (*models.
 
 	path := fmt.Sprintf("/shows/%d/episodes", showID)
 
-	// Build form fields
 	fields := map[string]string{
 		"title": params.Title,
 	}
@@ -64,7 +61,6 @@ func (c *Client) UploadEpisode(showID int, params UploadEpisodeParams) (*models.
 		fields["description"] = params.Description
 	}
 	if len(params.Tags) > 0 {
-		// Tags are comma-separated
 		tagStr := ""
 		for i, tag := range params.Tags {
 			if i > 0 {
@@ -95,7 +91,6 @@ func (c *Client) UploadEpisode(showID int, params UploadEpisodeParams) (*models.
 	return &resp.Episode, nil
 }
 
-// UpdateEpisodeParams contains parameters for updating an episode.
 type UpdateEpisodeParams struct {
 	Title           *string
 	Description     *string
@@ -108,7 +103,6 @@ type UpdateEpisodeParams struct {
 }
 
 // UpdateEpisode updates an existing episode.
-// Requires authentication and ownership.
 // API: POST /v2/episodes/{episode_id}
 func (c *Client) UpdateEpisode(episodeID int, params UpdateEpisodeParams) (*models.Episode, error) {
 	if c.Token == "" {
@@ -173,7 +167,6 @@ func (c *Client) UpdateEpisode(episodeID int, params UpdateEpisodeParams) (*mode
 }
 
 // DeleteEpisode deletes an episode.
-// Requires authentication and ownership.
 // API: DELETE /v2/episodes/{episode_id}
 func (c *Client) DeleteEpisode(episodeID int) error {
 	if c.Token == "" {
@@ -185,7 +178,6 @@ func (c *Client) DeleteEpisode(episodeID int) error {
 }
 
 // LikeEpisode adds an episode to the user's likes.
-// Requires authentication.
 // API: PUT /v2/users/{user_id}/likes/{episode_id}
 func (c *Client) LikeEpisode(userID, episodeID int) error {
 	if c.Token == "" {
@@ -244,4 +236,18 @@ func (c *Client) GetEpisodePlayURL(episodeID int) (string, error) {
 	}
 
 	return resp.URL, nil
+}
+
+// GetUserEpisodes retrieves all episodes published by a user.
+// API: GET /v2/users/{user_id}/episodes
+func (c *Client) GetUserEpisodes(userID int, pagination PaginationParams) (*PaginatedResult[models.Episode], error) {
+	path := fmt.Sprintf("/users/%d/episodes", userID)
+	return GetPaginated[models.Episode](c, path, pagination.ToMap())
+}
+
+// GetShowEpisodes retrieves all episodes of a show.
+// API: GET /v2/shows/{show_id}/episodes
+func (c *Client) GetShowEpisodes(showID int, pagination PaginationParams) (*PaginatedResult[models.Episode], error) {
+	path := fmt.Sprintf("/shows/%d/episodes", showID)
+	return GetPaginated[models.Episode](c, path, pagination.ToMap())
 }

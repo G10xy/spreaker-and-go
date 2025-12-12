@@ -35,11 +35,12 @@ func (c *Client) GetUser(userID int) (*models.User, error) {
 	return &resp.User, nil
 }
 
-// GetUserShows retrieves all shows belonging to a user.
-// API: GET /v2/users/{user_id}/shows
-//func (c *Client) GetUserShows(userID int, pagination PaginationParams) (*PaginatedResult[models.Show], error) {
-//	path := fmt.Sprintf("/users/%d/shows", userID)
-//}
+//GetUserShows retrieves all shows belonging to a user.
+//API: GET /v2/users/{user_id}/shows
+func (c *Client) GetUserShows(userID int, pagination PaginationParams) (*PaginatedResult[models.Show], error) {
+	path := fmt.Sprintf("/users/%d/shows", userID)
+	return GetPaginated[models.Show](c, path, pagination.ToMap())	
+}
 
 // GetMyShows is a convenience method to get the authenticated user's shows.
 // It first retrieves the current user's ID, then fetches their shows.
@@ -48,8 +49,7 @@ func (c *Client) GetMyShows(pagination PaginationParams) (*PaginatedResult[model
 	if err != nil {
 		return nil, err
 	}
-	path := fmt.Sprintf("/users/%d/shows", me.UserID)
-	return GetPaginated[models.Show](c, path, pagination.ToMap())
+	return c.GetUserShows(me.UserID, pagination)
 }
 
 // GetUserFollowers retrieves a user's followers.
@@ -92,13 +92,6 @@ func (c *Client) UnfollowUser(userID, followingID int) error {
 
 	path := fmt.Sprintf("/users/%d/followings/%d", userID, followingID)
 	return c.Delete(path, nil)
-}
-
-// GetUserEpisodes retrieves all episodes published by a user.
-// API: GET /v2/users/{user_id}/episodes
-func (c *Client) GetUserEpisodes(userID int, pagination PaginationParams) (*PaginatedResult[models.Episode], error) {
-	path := fmt.Sprintf("/users/%d/episodes", userID)
-	return GetPaginated[models.Episode](c, path, pagination.ToMap())
 }
 
 // UpdateUserParams contains parameters for updating a user profile.

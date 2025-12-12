@@ -33,7 +33,6 @@ type CreateShowParams struct {
 }
 
 // CreateShow creates a new podcast show.
-// Requires authentication.
 // API: POST /v2/shows
 func (c *Client) CreateShow(params CreateShowParams) (*models.Show, error) {
 	if c.Token == "" {
@@ -65,7 +64,6 @@ func (c *Client) CreateShow(params CreateShowParams) (*models.Show, error) {
 	return &resp.Show, nil
 }
 
-// UpdateShowParams contains parameters for updating a show.
 type UpdateShowParams struct {
 	Title       *string `json:"title,omitempty"`
 	Description *string `json:"description,omitempty"`
@@ -75,7 +73,6 @@ type UpdateShowParams struct {
 }
 
 // UpdateShow updates an existing show.
-// Requires authentication and ownership.
 // API: POST /v2/shows/{show_id}
 func (c *Client) UpdateShow(showID int, params UpdateShowParams) (*models.Show, error) {
 	if c.Token == "" {
@@ -115,7 +112,6 @@ func (c *Client) UpdateShow(showID int, params UpdateShowParams) (*models.Show, 
 }
 
 // DeleteShow deletes a show.
-// Requires authentication and ownership.
 // API: DELETE /v2/shows/{show_id}
 func (c *Client) DeleteShow(showID int) error {
 	if c.Token == "" {
@@ -126,15 +122,7 @@ func (c *Client) DeleteShow(showID int) error {
 	return c.Delete(path, nil)
 }
 
-// GetShowEpisodes retrieves all episodes of a show.
-// API: GET /v2/shows/{show_id}/episodes
-func (c *Client) GetShowEpisodes(showID int, pagination PaginationParams) (*PaginatedResult[models.Episode], error) {
-	path := fmt.Sprintf("/shows/%d/episodes", showID)
-	return GetPaginated[models.Episode](c, path, pagination.ToMap())
-}
-
 // AddShowToFavorites adds a show to the user's favorites.
-// Requires authentication.
 // API: PUT /v2/users/{user_id}/favorites/{show_id}
 func (c *Client) AddShowToFavorites(userID, showID int) error {
 	if c.Token == "" {
