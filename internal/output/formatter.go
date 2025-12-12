@@ -366,3 +366,243 @@ func formatDuration(ms int) string {
 	}
 	return fmt.Sprintf("%d:%02d", minutes, seconds)
 }
+
+
+// -----------------------------------------------------------------------------
+// Statistics Output (add to internal/output/formatter.go)
+// -----------------------------------------------------------------------------
+
+// PrintUserStatistics prints user overall statistics.
+func (f *Formatter) PrintUserStatistics(stats *models.UserOverallStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		fmt.Fprintf(f.writer, "plays=%d downloads=%d likes=%d followers=%d shows=%d episodes=%d\n",
+			stats.PlaysCount, stats.DownloadsCount, stats.LikesCount,
+			stats.FollowersCount, stats.ShowsCount, stats.EpisodesCount)
+	default:
+		f.printUserStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printUserStatisticsTable(stats *models.UserOverallStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "=== Overall Statistics ===")
+	fmt.Fprintf(tw, "Total Plays:\t%d\n", stats.PlaysCount)
+	fmt.Fprintf(tw, "  On Demand:\t%d\n", stats.PlaysOndemandCount)
+	fmt.Fprintf(tw, "  Live:\t%d\n", stats.PlaysLiveCount)
+	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.DownloadsCount)
+	fmt.Fprintf(tw, "Likes:\t%d\n", stats.LikesCount)
+	fmt.Fprintf(tw, "Followers:\t%d\n", stats.FollowersCount)
+	fmt.Fprintf(tw, "Shows:\t%d\n", stats.ShowsCount)
+	fmt.Fprintf(tw, "Episodes:\t%d\n", stats.EpisodesCount)
+
+	tw.Flush()
+}
+
+// PrintShowStatistics prints show overall statistics.
+func (f *Formatter) PrintShowStatistics(stats *models.ShowOverallStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		fmt.Fprintf(f.writer, "plays=%d downloads=%d likes=%d episodes=%d\n",
+			stats.PlaysCount, stats.DownloadsCount, stats.LikesCount, stats.EpisodesCount)
+	default:
+		f.printShowStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printShowStatisticsTable(stats *models.ShowOverallStatistics) {
+	tw := f.tabw()
+
+	if stats.Title != "" {
+		fmt.Fprintf(tw, "Show:\t%s\n", stats.Title)
+	}
+	fmt.Fprintln(tw, "=== Overall Statistics ===")
+	fmt.Fprintf(tw, "Total Plays:\t%d\n", stats.PlaysCount)
+	fmt.Fprintf(tw, "  On Demand:\t%d\n", stats.PlaysOndemandCount)
+	fmt.Fprintf(tw, "  Live:\t%d\n", stats.PlaysLiveCount)
+	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.DownloadsCount)
+	fmt.Fprintf(tw, "Likes:\t%d\n", stats.LikesCount)
+	fmt.Fprintf(tw, "Episodes:\t%d\n", stats.EpisodesCount)
+
+	tw.Flush()
+}
+
+// PrintEpisodeStatistics prints episode overall statistics.
+func (f *Formatter) PrintEpisodeStatistics(stats *models.EpisodeOverallStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		fmt.Fprintf(f.writer, "plays=%d downloads=%d likes=%d messages=%d\n",
+			stats.PlaysCount, stats.DownloadsCount, stats.LikesCount, stats.MessagesCount)
+	default:
+		f.printEpisodeStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printEpisodeStatisticsTable(stats *models.EpisodeOverallStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "=== Overall Statistics ===")
+	fmt.Fprintf(tw, "Total Plays:\t%d\n", stats.PlaysCount)
+	fmt.Fprintf(tw, "  On Demand:\t%d\n", stats.PlaysOndemandCount)
+	fmt.Fprintf(tw, "  Live:\t%d\n", stats.PlaysLiveCount)
+	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.DownloadsCount)
+	fmt.Fprintf(tw, "Likes:\t%d\n", stats.LikesCount)
+	fmt.Fprintf(tw, "Messages:\t%d\n", stats.MessagesCount)
+	fmt.Fprintf(tw, "Chapters:\t%d\n", stats.ChaptersCount)
+
+	tw.Flush()
+}
+
+// PrintPlayStatistics prints time-series play statistics.
+func (f *Formatter) PrintPlayStatistics(stats []models.PlayStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats {
+			fmt.Fprintf(f.writer, "%s\t%d\t%d\n", s.Date, s.PlaysCount, s.DownloadsCount)
+		}
+	default:
+		f.printPlayStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printPlayStatisticsTable(stats []models.PlayStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "DATE\tPLAYS\tON DEMAND\tLIVE\tDOWNLOADS")
+	fmt.Fprintln(tw, "----\t-----\t---------\t----\t---------")
+
+	for _, s := range stats {
+		fmt.Fprintf(tw, "%s\t%d\t%d\t%d\t%d\n",
+			s.Date, s.PlaysCount, s.PlaysOndemandCount, s.PlaysLiveCount, s.DownloadsCount)
+	}
+
+	tw.Flush()
+}
+
+// PrintDeviceStatistics prints device breakdown statistics.
+func (f *Formatter) PrintDeviceStatistics(stats []models.DeviceStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats {
+			fmt.Fprintf(f.writer, "%s\t%.1f%%\n", s.Name, s.Percentage)
+		}
+	default:
+		f.printDeviceStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printDeviceStatisticsTable(stats []models.DeviceStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "DEVICE\tPERCENTAGE")
+	fmt.Fprintln(tw, "------\t----------")
+
+	for _, s := range stats {
+		fmt.Fprintf(tw, "%s\t%.1f%%\n", s.Name, s.Percentage)
+	}
+
+	tw.Flush()
+}
+
+// PrintGeographicStatistics prints geographic breakdown statistics.
+func (f *Formatter) PrintGeographicStatistics(stats *models.GeographicStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, c := range stats.Country {
+			fmt.Fprintf(f.writer, "country\t%s\t%.1f%%\n", c.Name, c.Percentage)
+		}
+		for _, c := range stats.City {
+			fmt.Fprintf(f.writer, "city\t%s\t%.1f%%\n", c.Name, c.Percentage)
+		}
+	default:
+		f.printGeographicStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printGeographicStatisticsTable(stats *models.GeographicStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "=== By Country ===")
+	fmt.Fprintln(tw, "COUNTRY\tPERCENTAGE")
+	fmt.Fprintln(tw, "-------\t----------")
+	for _, c := range stats.Country {
+		fmt.Fprintf(tw, "%s\t%.1f%%\n", c.Name, c.Percentage)
+	}
+
+	fmt.Fprintln(tw, "")
+	fmt.Fprintln(tw, "=== By City ===")
+	fmt.Fprintln(tw, "CITY\tPERCENTAGE")
+	fmt.Fprintln(tw, "----\t----------")
+	for _, c := range stats.City {
+		fmt.Fprintf(tw, "%s\t%.1f%%\n", c.Name, c.Percentage)
+	}
+
+	tw.Flush()
+}
+
+// PrintSourcesStatistics prints sources breakdown statistics.
+func (f *Formatter) PrintSourcesStatistics(stats *models.SourcesStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats.Overall {
+			fmt.Fprintf(f.writer, "%s\t%d\t%d%%\n", s.Name, s.PlaysCount, s.Percentage)
+		}
+	default:
+		f.printSourcesStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printSourcesStatisticsTable(stats *models.SourcesStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "SOURCE\tPLAYS\tPERCENTAGE")
+	fmt.Fprintln(tw, "------\t-----\t----------")
+
+	for _, s := range stats.Overall {
+		fmt.Fprintf(tw, "%s\t%d\t%d%%\n", s.Name, s.PlaysCount, s.Percentage)
+	}
+
+	tw.Flush()
+}
+
+// PrintListenersStatistics prints time-series listeners statistics.
+func (f *Formatter) PrintListenersStatistics(stats []models.ListenersStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats {
+			fmt.Fprintf(f.writer, "%s\t%d\n", s.Date, s.ListenersCount)
+		}
+	default:
+		f.printListenersStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printListenersStatisticsTable(stats []models.ListenersStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "DATE\tLISTENERS")
+	fmt.Fprintln(tw, "----\t---------")
+
+	for _, s := range stats {
+		fmt.Fprintf(tw, "%s\t%d\n", s.Date, s.ListenersCount)
+	}
+
+	tw.Flush()
+}

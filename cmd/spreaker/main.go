@@ -54,6 +54,7 @@ func newRootCmd() *cobra.Command {
 		newShowsCmd(),
 		newEpisodesCmd(),
 		newConfigCmd(),
+		newStatsCmd()
 	)
 
 	return rootCmd
@@ -567,6 +568,319 @@ Example:
 	}
 	deleteCmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
 	cmd.AddCommand(deleteCmd)
+
+	return cmd
+}
+
+
+// -----------------------------------------------------------------------------
+// Stats Commands
+// -----------------------------------------------------------------------------
+
+func newStatsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "stats",
+		Short: "View statistics for users, shows, and episodes",
+	}
+
+	cmd.AddCommand(&cobra.Command{
+		Use:   "me",
+		Short: "Show your overall statistics",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetMyStatistics()
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintUserStatistics(stats)
+			return nil
+		},
+	})
+
+	// stats show <show-id> - Get show's overall statistics
+	showCmd := &cobra.Command{
+		Use:   "show <show-id>",
+		Short: "Show statistics for a specific show",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var showID int
+			if _, err := fmt.Sscanf(args[0], "%d", &showID); err != nil {
+				return fmt.Errorf("invalid show ID: %s", args[0])
+			}
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetShowStatistics(showID)
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintShowStatistics(stats)
+			return nil
+		},
+	}
+	cmd.AddCommand(showCmd)
+
+	// stats episode <episode-id> - Get episode's overall statistics
+	episodeCmd := &cobra.Command{
+		Use:   "episode <episode-id>",
+		Short: "Show statistics for a specific episode",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var episodeID int
+			if _, err := fmt.Sscanf(args[0], "%d", &episodeID); err != nil {
+				return fmt.Errorf("invalid episode ID: %s", args[0])
+			}
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetEpisodeStatistics(episodeID)
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintEpisodeStatistics(stats)
+			return nil
+		},
+	}
+	cmd.AddCommand(episodeCmd)
+
+	// stats plays <show-id> - Get play statistics for a show
+	playsCmd := &cobra.Command{
+		Use:   "plays <show-id>",
+		Short: "Show play statistics for a show over time",
+		Long: `Show play statistics for a show over a date range.
+
+		Example:
+		spreaker stats plays 12345 --from 2024-01-01 --to 2024-01-31 --group day`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var showID int
+			if _, err := fmt.Sscanf(args[0], "%d", &showID); err != nil {
+				return fmt.Errorf("invalid show ID: %s", args[0])
+			}
+
+			from, _ := cmd.Flags().GetString("from")
+			to, _ := cmd.Flags().GetString("to")
+			group, _ := cmd.Flags().GetString("group")
+
+			if from == "" || to == "" {
+				return fmt.Errorf("--from and --to are required")
+			}
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetShowPlayStatistics(showID, api.StatisticsParams{
+				From:  from,
+				To:    to,
+				Group: group,
+			})
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintPlayStatistics(stats)
+			return nil
+		},
+	}
+	playsCmd.Flags().String("from", "", "Start date (YYYY-MM-DD, required)")
+	playsCmd.Flags().String("to", "", "End date (YYYY-MM-DD, required)")
+	playsCmd.Flags().String("group", "day", "Group by: day, week, or month")
+	playsCmd.MarkFlagRequired("from")
+	playsCmd.MarkFlagRequired("to")
+	cmd.AddCommand(playsCmd)
+
+	// stats devices <show-id> - Get device statistics for a show
+	devicesCmd := &cobra.Command{
+		Use:   "devices <show-id>",
+		Short: "Show device breakdown for a show",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var showID int
+			if _, err := fmt.Sscanf(args[0], "%d", &showID); err != nil {
+				return fmt.Errorf("invalid show ID: %s", args[0])
+			}
+
+			from, _ := cmd.Flags().GetString("from")
+			to, _ := cmd.Flags().GetString("to")
+
+			if from == "" || to == "" {
+				return fmt.Errorf("--from and --to are required")
+			}
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetShowDevicesStatistics(showID, api.StatisticsParams{
+				From: from,
+				To:   to,
+			})
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintDeviceStatistics(stats)
+			return nil
+		},
+	}
+	devicesCmd.Flags().String("from", "", "Start date (YYYY-MM-DD, required)")
+	devicesCmd.Flags().String("to", "", "End date (YYYY-MM-DD, required)")
+	devicesCmd.MarkFlagRequired("from")
+	devicesCmd.MarkFlagRequired("to")
+	cmd.AddCommand(devicesCmd)
+
+	// stats geo <show-id> - Get geographic statistics for a show
+	geoCmd := &cobra.Command{
+		Use:   "geo <show-id>",
+		Short: "Show geographic breakdown for a show",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var showID int
+			if _, err := fmt.Sscanf(args[0], "%d", &showID); err != nil {
+				return fmt.Errorf("invalid show ID: %s", args[0])
+			}
+
+			from, _ := cmd.Flags().GetString("from")
+			to, _ := cmd.Flags().GetString("to")
+
+			if from == "" || to == "" {
+				return fmt.Errorf("--from and --to are required")
+			}
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetShowGeographicStatistics(showID, api.StatisticsParams{
+				From: from,
+				To:   to,
+			})
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintGeographicStatistics(stats)
+			return nil
+		},
+	}
+	geoCmd.Flags().String("from", "", "Start date (YYYY-MM-DD, required)")
+	geoCmd.Flags().String("to", "", "End date (YYYY-MM-DD, required)")
+	geoCmd.MarkFlagRequired("from")
+	geoCmd.MarkFlagRequired("to")
+	cmd.AddCommand(geoCmd)
+
+	// stats sources <show-id> - Get sources statistics for a show
+	sourcesCmd := &cobra.Command{
+		Use:   "sources <show-id>",
+		Short: "Show play/download sources for a show",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var showID int
+			if _, err := fmt.Sscanf(args[0], "%d", &showID); err != nil {
+				return fmt.Errorf("invalid show ID: %s", args[0])
+			}
+
+			from, _ := cmd.Flags().GetString("from")
+			to, _ := cmd.Flags().GetString("to")
+			group, _ := cmd.Flags().GetString("group")
+
+			if from == "" || to == "" {
+				return fmt.Errorf("--from and --to are required")
+			}
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetShowSourcesStatistics(showID, api.StatisticsParams{
+				From:  from,
+				To:    to,
+				Group: group,
+			})
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintSourcesStatistics(stats)
+			return nil
+		},
+	}
+	sourcesCmd.Flags().String("from", "", "Start date (YYYY-MM-DD, required)")
+	sourcesCmd.Flags().String("to", "", "End date (YYYY-MM-DD, required)")
+	sourcesCmd.Flags().String("group", "day", "Group by: day, week, or month")
+	sourcesCmd.MarkFlagRequired("from")
+	sourcesCmd.MarkFlagRequired("to")
+	cmd.AddCommand(sourcesCmd)
+
+	// stats listeners <show-id> - Get listeners statistics for a show
+	listenersCmd := &cobra.Command{
+		Use:   "listeners <show-id>",
+		Short: "Show unique listeners for a show over time",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var showID int
+			if _, err := fmt.Sscanf(args[0], "%d", &showID); err != nil {
+				return fmt.Errorf("invalid show ID: %s", args[0])
+			}
+
+			from, _ := cmd.Flags().GetString("from")
+			to, _ := cmd.Flags().GetString("to")
+			group, _ := cmd.Flags().GetString("group")
+
+			if from == "" || to == "" {
+				return fmt.Errorf("--from and --to are required")
+			}
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			stats, err := client.GetShowListenersStatistics(showID, api.StatisticsParams{
+				From:  from,
+				To:    to,
+				Group: group,
+			})
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintListenersStatistics(stats)
+			return nil
+		},
+	}
+	listenersCmd.Flags().String("from", "", "Start date (YYYY-MM-DD, required)")
+	listenersCmd.Flags().String("to", "", "End date (YYYY-MM-DD, required)")
+	listenersCmd.Flags().String("group", "day", "Group by: day, week, or month")
+	listenersCmd.MarkFlagRequired("from")
+	listenersCmd.MarkFlagRequired("to")
+	cmd.AddCommand(listenersCmd)
 
 	return cmd
 }
