@@ -1,0 +1,61 @@
+# Binary
+spreaker
+spreaker.exe
+spreaker-cli
+spreaker-cli.exe
+
+# Build output
+/dist/
+/bin/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go.work
+go.work.sum
+
+# Dependency directories
+/vendor/
+
+# IDE / Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Config with sensitive data (token)
+config.yaml
+config.yml
+config.json
+
+# Test coverage
+coverage.out
+coverage.html
+
+# Debug
+debug
+debug.exe
+*.log
+
+# GoReleaser
+/dist/
