@@ -1,11 +1,3 @@
-/*
-Package api provides user-related methods for the Spreaker API.
-
-This file contains methods for:
-  - Retrieving user profiles (GetMe, GetUser)
-  - Listing user's shows
-  - Managing followers/followings
-*/
 package api
 
 import (
@@ -45,9 +37,9 @@ func (c *Client) GetUser(userID int) (*models.User, error) {
 
 // GetUserShows retrieves all shows belonging to a user.
 // API: GET /v2/users/{user_id}/shows
-func (c *Client) GetUserShows(userID int, pagination PaginationParams) (*PaginatedResult[models.Show], error) {
-	path := fmt.Sprintf("/users/%d/shows", userID)
-}
+//func (c *Client) GetUserShows(userID int, pagination PaginationParams) (*PaginatedResult[models.Show], error) {
+//	path := fmt.Sprintf("/users/%d/shows", userID)
+//}
 
 // GetMyShows is a convenience method to get the authenticated user's shows.
 // It first retrieves the current user's ID, then fetches their shows.
@@ -56,8 +48,8 @@ func (c *Client) GetMyShows(pagination PaginationParams) (*PaginatedResult[model
 	if err != nil {
 		return nil, err
 	}
-
-	return c.GetUserShows(me.UserID, pagination)
+	path := fmt.Sprintf("/users/%d/shows", me.UserID)
+	return GetPaginated[models.Show](c, path, pagination.ToMap())
 }
 
 // GetUserFollowers retrieves a user's followers.
@@ -109,6 +101,20 @@ func (c *Client) GetUserEpisodes(userID int, pagination PaginationParams) (*Pagi
 	return GetPaginated[models.Episode](c, path, pagination.ToMap())
 }
 
+// UpdateUserParams contains parameters for updating a user profile.
+type UpdateUserParams struct {
+	Fullname         *string  
+	Description      *string  
+	Gender           *string  
+	Birthday         *string 
+	ShowAge          *bool    
+	Location         *string 
+	LocationLatitude *float64
+	LocationLongitude *float64 
+	ContentLanguages *string  
+	Username         *string  
+	ContactEmail     *string  
+}
 
 // UpdateUser updates a user's profile.
 // API: POST /v2/users/{user_id}

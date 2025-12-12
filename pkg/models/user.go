@@ -39,17 +39,3 @@ type UserResponse struct {
 	User User `json:"user"`
 }
 
-// UpdateUserParams contains parameters for updating a user profile.
-type UpdateUserParams struct {
-	Fullname         *string  
-	Description      *string  
-	Gender           *string  
-	Birthday         *string 
-	ShowAge          *bool    
-	Location         *string 
-	LocationLatitude *float64
-	LocationLongitude *float64 
-	ContentLanguages *string  
-	Username         *string  
-	ContactEmail     *string  
-}
