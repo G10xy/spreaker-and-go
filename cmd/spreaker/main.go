@@ -1037,3 +1037,59 @@ Examples:
 	return cmd
 }
 
+// -----------------------------------------------------------------------------
+// Tags Commands 
+// -----------------------------------------------------------------------------
+
+func newTagsCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "tags",
+		Short: "Discover episodes by tag",
+	}
+
+	// tags episodes <tag-name> - Get episodes with a specific tag
+	episodesCmd := &cobra.Command{
+		Use:   "episodes <tag-name>",
+		Short: "Get latest episodes with a specific tag",
+		Long: `Get the latest episodes that have been tagged with a specific hashtag.
+The tag name can contain spaces and special characters.
+Examples:
+  spreaker tags episodes "breaking news"
+  spreaker tags episodes tech
+  spreaker tags episodes "machine learning" --limit 50`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			tagName := args[0]
+
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			limit, _ := cmd.Flags().GetInt("limit")
+			result, err := client.GetEpisodesByTag(tagName, api.PaginationParams{Limit: limit})
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+
+			if len(result.Items) == 0 {
+				formatter.PrintMessage(fmt.Sprintf("No episodes found with tag '%s'.", tagName))
+				return nil
+			}
+
+			formatter.PrintEpisodes(result.Items)
+
+			if result.HasMore {
+				formatter.PrintMessage("\n(more episodes available, use --limit to see more)")
+			}
+
+			return nil
+		},
+	}
+	episodesCmd.Flags().IntP("limit", "l", 20, "Maximum number of episodes")
+	cmd.AddCommand(episodesCmd)
+
+	return cmd
+}
