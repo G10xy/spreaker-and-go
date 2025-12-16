@@ -944,3 +944,96 @@ Examples:
 
 	return cmd
 }
+
+
+// -----------------------------------------------------------------------------
+// Miscellaneous Commands 
+// -----------------------------------------------------------------------------
+
+func newMiscCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:     "misc",
+		Aliases: []string{"miscellaneous"},
+		Short:   "List categories and languages",
+	}
+
+	categoriesCmd := &cobra.Command{
+		Use:   "categories",
+		Short: "List all show categories",
+		Long: `List all available show categories.
+
+Examples:
+  spreaker misc categories
+  spreaker misc categories --locale it_IT`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			locale, _ := cmd.Flags().GetString("locale")
+			categories, err := client.GetShowCategories(locale)
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintCategories(categories)
+			return nil
+		},
+	}
+	categoriesCmd.Flags().String("locale", "", "Locale for category names (e.g., it_IT)")
+	cmd.AddCommand(categoriesCmd)
+
+	gpCategoriesCmd := &cobra.Command{
+		Use:   "googleplay-categories",
+		Short: "List all Google Play podcast categories",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			categories, err := client.GetGooglePlayCategories()
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintGooglePlayCategories(categories)
+			return nil
+		},
+	}
+	cmd.AddCommand(gpCategoriesCmd)
+
+	languagesCmd := &cobra.Command{
+		Use:   "languages",
+		Short: "List all show languages",
+		Long: `List all available languages for shows.
+
+Examples:
+  spreaker misc languages
+  spreaker misc languages --locale it_IT`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			client, err := getClient(cmd)
+			if err != nil {
+				return err
+			}
+
+			locale, _ := cmd.Flags().GetString("locale")
+			languages, err := client.GetShowLanguagesList(locale)
+			if err != nil {
+				return err
+			}
+
+			formatter := getFormatter(cmd)
+			formatter.PrintLanguages(languages)
+			return nil
+		},
+	}
+	languagesCmd.Flags().String("locale", "", "Locale for language names (e.g., it_IT)")
+	cmd.AddCommand(languagesCmd)
+
+	return cmd
+}
+

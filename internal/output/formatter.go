@@ -638,3 +638,90 @@ func (f *Formatter) printExploreShowsTable(shows []models.ExploreShow) {
 
 	tw.Flush()
 }
+
+
+// -----------------------------------------------------------------------------
+// Miscellaneous Output
+// -----------------------------------------------------------------------------
+
+func (f *Formatter) PrintCategories(categories []models.Category) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(categories)
+	case FormatPlain:
+		for _, c := range categories {
+			fmt.Fprintf(f.writer, "%d\t%s\t%d\n", c.CategoryID, c.Name, c.Level)
+		}
+	default:
+		f.printCategoriesTable(categories)
+	}
+}
+
+func (f *Formatter) printCategoriesTable(categories []models.Category) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "ID\tNAME\tLEVEL")
+	fmt.Fprintln(tw, "--\t----\t-----")
+
+	for _, c := range categories {
+		levelIndicator := ""
+		if c.Level == 2 {
+			levelIndicator = "  └─ " // Indent subcategories
+		}
+		fmt.Fprintf(tw, "%d\t%s%s\t%d\n", c.CategoryID, levelIndicator, c.Name, c.Level)
+	}
+
+	tw.Flush()
+}
+
+func (f *Formatter) PrintGooglePlayCategories(categories []models.GooglePlayCategory) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(categories)
+	case FormatPlain:
+		for _, c := range categories {
+			fmt.Fprintf(f.writer, "%d\t%s\n", c.CategoryID, c.Name)
+		}
+	default:
+		f.printGooglePlayCategoriesTable(categories)
+	}
+}
+
+func (f *Formatter) printGooglePlayCategoriesTable(categories []models.GooglePlayCategory) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "ID\tNAME")
+	fmt.Fprintln(tw, "--\t----")
+
+	for _, c := range categories {
+		fmt.Fprintf(tw, "%d\t%s\n", c.CategoryID, c.Name)
+	}
+
+	tw.Flush()
+}
+
+func (f *Formatter) PrintLanguages(languages []models.Language) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(languages)
+	case FormatPlain:
+		for _, l := range languages {
+			fmt.Fprintf(f.writer, "%s\t%s\n", l.Code, l.Name)
+		}
+	default:
+		f.printLanguagesTable(languages)
+	}
+}
+
+func (f *Formatter) printLanguagesTable(languages []models.Language) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "CODE\tLANGUAGE")
+	fmt.Fprintln(tw, "----\t--------")
+
+	for _, l := range languages {
+		fmt.Fprintf(tw, "%s\t%s\n", l.Code, l.Name)
+	}
+
+	tw.Flush()
+}
