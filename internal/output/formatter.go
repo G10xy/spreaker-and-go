@@ -606,3 +606,35 @@ func (f *Formatter) printListenersStatisticsTable(stats []models.ListenersStatis
 
 	tw.Flush()
 }
+
+
+// PrintExploreShows prints a list of shows from explore endpoints.
+func (f *Formatter) PrintExploreShows(shows []models.ExploreShow) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(shows)
+	case FormatPlain:
+		for _, s := range shows {
+			fmt.Fprintf(f.writer, "%d\t%s\n", s.ShowID, s.Title)
+		}
+	default:
+		f.printExploreShowsTable(shows)
+	}
+}
+
+func (f *Formatter) printExploreShowsTable(shows []models.ExploreShow) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "ID\tTITLE\tURL")
+	fmt.Fprintln(tw, "--\t-----\t---")
+
+	for _, s := range shows {
+		fmt.Fprintf(tw, "%d\t%s\t%s\n",
+			s.ShowID,
+			truncate(s.Title, 40),
+			s.SiteURL,
+		)
+	}
+
+	tw.Flush()
+}
