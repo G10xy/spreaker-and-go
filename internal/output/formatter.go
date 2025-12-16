@@ -725,3 +725,44 @@ func (f *Formatter) printLanguagesTable(languages []models.Language) {
 
 	tw.Flush()
 }
+
+
+// -----------------------------------------------------------------------------
+// Episode Cuepoints Output 
+// -----------------------------------------------------------------------------
+
+func (f *Formatter) PrintCuepoints(cuepoints []models.Cuepoint) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(cuepoints)
+	case FormatPlain:
+		for _, c := range cuepoints {
+			fmt.Fprintf(f.writer, "%d\t%d\n", c.Timecode, c.AdsMaxCount)
+		}
+	default:
+		f.printCuepointsTable(cuepoints)
+	}
+}
+
+func (f *Formatter) printCuepointsTable(cuepoints []models.Cuepoint) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "TIMECODE (ms)\tTIME\tMAX ADS")
+	fmt.Fprintln(tw, "-------------\t----\t-------")
+
+	for _, c := range cuepoints {
+		// Convert milliseconds to human-readable time (mm:ss)
+		totalSeconds := c.Timecode / 1000
+		minutes := totalSeconds / 60
+		seconds := totalSeconds % 60
+		timeStr := fmt.Sprintf("%d:%02d", minutes, seconds)
+
+		fmt.Fprintf(tw, "%d\t%s\t%d\n",
+			c.Timecode,
+			timeStr,
+			c.AdsMaxCount,
+		)
+	}
+
+	tw.Flush()
+}
