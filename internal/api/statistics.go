@@ -10,7 +10,6 @@ import (
 // Statistics Query Parameters
 // -----------------------------------------------------------------------------
 
-// StatisticsParams holds common parameters for time-series statistics endpoints.
 type StatisticsParams struct {
 	From string
 	To string
@@ -18,7 +17,6 @@ type StatisticsParams struct {
 	Precision int
 }
 
-// ToMap converts StatisticsParams to a query parameter map.
 func (p StatisticsParams) ToMap() map[string]string {
 	params := make(map[string]string)
 	if p.From != "" {
@@ -43,8 +41,8 @@ func (p StatisticsParams) ToMap() map[string]string {
 // GetUserStatistics retrieves a user's all-time overall statistics.
 // API: GET /v2/users/{user_id}/statistics
 func (c *Client) GetUserStatistics(userID int) (*models.UserOverallStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics", userID)
@@ -69,8 +67,8 @@ func (c *Client) GetMyStatistics() (*models.UserOverallStatistics, error) {
 // GetShowStatistics retrieves a show's all-time overall statistics.
 // API: GET /v2/shows/{show_id}/statistics
 func (c *Client) GetShowStatistics(showID int) (*models.ShowOverallStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics", showID)
@@ -86,8 +84,8 @@ func (c *Client) GetShowStatistics(showID int) (*models.ShowOverallStatistics, e
 // GetEpisodeStatistics retrieves an episode's all-time overall statistics.
 // API: GET /v2/episodes/{episode_id}/statistics
 func (c *Client) GetEpisodeStatistics(episodeID int) (*models.EpisodeOverallStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d/statistics", episodeID)
@@ -108,8 +106,8 @@ func (c *Client) GetEpisodeStatistics(episodeID int) (*models.EpisodeOverallStat
 // API: GET /v2/users/{user_id}/statistics/plays
 // Required params: From, To, Group
 func (c *Client) GetUserPlayStatistics(userID int, params StatisticsParams) ([]models.PlayStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics/plays", userID)
@@ -126,8 +124,8 @@ func (c *Client) GetUserPlayStatistics(userID int, params StatisticsParams) ([]m
 // API: GET /v2/shows/{show_id}/statistics/plays
 // Required params: From, To, Group
 func (c *Client) GetShowPlayStatistics(showID int, params StatisticsParams) ([]models.PlayStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics/plays", showID)
@@ -144,8 +142,8 @@ func (c *Client) GetShowPlayStatistics(showID int, params StatisticsParams) ([]m
 // API: GET /v2/episodes/{episode_id}/statistics/plays
 // Required params: From, To, Group
 func (c *Client) GetEpisodePlayStatistics(episodeID int, params StatisticsParams) ([]models.PlayStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d/statistics/plays", episodeID)
@@ -163,8 +161,8 @@ func (c *Client) GetEpisodePlayStatistics(episodeID int, params StatisticsParams
 // Required params: From, To
 // Returns a paginated list.
 func (c *Client) GetUserShowsPlayTotals(userID int, params StatisticsParams, pagination PaginationParams) (*PaginatedResult[models.ShowPlayTotals], error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/shows/statistics/plays/totals", userID)
@@ -183,8 +181,8 @@ func (c *Client) GetUserShowsPlayTotals(userID int, params StatisticsParams, pag
 // Required params: From, To
 // Returns a paginated list.
 func (c *Client) GetShowEpisodesPlayTotals(showID int, params StatisticsParams, pagination PaginationParams) (*PaginatedResult[models.EpisodePlayTotals], error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/episodes/statistics/plays/totals", showID)
@@ -206,8 +204,8 @@ func (c *Client) GetShowEpisodesPlayTotals(showID int, params StatisticsParams, 
 // API: GET /v2/users/{user_id}/statistics/likes
 // Required params: From, To, Group
 func (c *Client) GetUserLikesStatistics(userID int, params StatisticsParams) ([]models.LikesStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics/likes", userID)
@@ -224,8 +222,8 @@ func (c *Client) GetUserLikesStatistics(userID int, params StatisticsParams) ([]
 // API: GET /v2/shows/{show_id}/statistics/likes
 // Required params: From, To, Group
 func (c *Client) GetShowLikesStatistics(showID int, params StatisticsParams) ([]models.LikesStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics/likes", showID)
@@ -242,8 +240,8 @@ func (c *Client) GetShowLikesStatistics(showID int, params StatisticsParams) ([]
 // API: GET /v2/episodes/{episode_id}/statistics/likes
 // Required params: From, To, Group
 func (c *Client) GetEpisodeLikesStatistics(episodeID int, params StatisticsParams) ([]models.LikesStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d/statistics/likes", episodeID)
@@ -264,8 +262,8 @@ func (c *Client) GetEpisodeLikesStatistics(episodeID int, params StatisticsParam
 // API: GET /v2/users/{user_id}/statistics/followers
 // Required params: From, To, Group
 func (c *Client) GetUserFollowersStatistics(userID int, params StatisticsParams) ([]models.FollowersStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics/followers", userID)
@@ -285,10 +283,9 @@ func (c *Client) GetUserFollowersStatistics(userID int, params StatisticsParams)
 // GetUserSourcesStatistics retrieves a user's play/download sources statistics.
 // API: GET /v2/users/{user_id}/statistics/sources
 // Required params: From, To, Group
-// Optional: Precision
 func (c *Client) GetUserSourcesStatistics(userID int, params StatisticsParams) (*models.SourcesStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics/sources", userID)
@@ -304,10 +301,9 @@ func (c *Client) GetUserSourcesStatistics(userID int, params StatisticsParams) (
 // GetShowSourcesStatistics retrieves a show's play/download sources statistics.
 // API: GET /v2/shows/{show_id}/statistics/sources
 // Required params: From, To, Group
-// Optional: Precision
 func (c *Client) GetShowSourcesStatistics(showID int, params StatisticsParams) (*models.SourcesStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics/sources", showID)
@@ -323,10 +319,9 @@ func (c *Client) GetShowSourcesStatistics(showID int, params StatisticsParams) (
 // GetEpisodeSourcesStatistics retrieves an episode's play/download sources statistics.
 // API: GET /v2/episodes/{episode_id}/statistics/sources
 // Required params: From, To, Group
-// Optional: Precision
 func (c *Client) GetEpisodeSourcesStatistics(episodeID int, params StatisticsParams) (*models.SourcesStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d/statistics/sources", episodeID)
@@ -346,10 +341,9 @@ func (c *Client) GetEpisodeSourcesStatistics(episodeID int, params StatisticsPar
 // GetUserDevicesStatistics retrieves a user's device type statistics.
 // API: GET /v2/users/{user_id}/statistics/devices
 // Required params: From, To
-// Optional: Precision
 func (c *Client) GetUserDevicesStatistics(userID int, params StatisticsParams) ([]models.DeviceStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics/devices", userID)
@@ -365,10 +359,9 @@ func (c *Client) GetUserDevicesStatistics(userID int, params StatisticsParams) (
 // GetShowDevicesStatistics retrieves a show's device type statistics.
 // API: GET /v2/shows/{show_id}/statistics/devices
 // Required params: From, To
-// Optional: Precision
 func (c *Client) GetShowDevicesStatistics(showID int, params StatisticsParams) ([]models.DeviceStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics/devices", showID)
@@ -384,10 +377,9 @@ func (c *Client) GetShowDevicesStatistics(showID int, params StatisticsParams) (
 // GetEpisodeDevicesStatistics retrieves an episode's device type statistics.
 // API: GET /v2/episodes/{episode_id}/statistics/devices
 // Required params: From, To
-// Optional: Precision
 func (c *Client) GetEpisodeDevicesStatistics(episodeID int, params StatisticsParams) ([]models.DeviceStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d/statistics/devices", episodeID)
@@ -407,10 +399,9 @@ func (c *Client) GetEpisodeDevicesStatistics(episodeID int, params StatisticsPar
 // GetUserOSStatistics retrieves a user's operating system statistics.
 // API: GET /v2/users/{user_id}/statistics/os
 // Required params: From, To
-// Optional: Precision
 func (c *Client) GetUserOSStatistics(userID int, params StatisticsParams) (*models.OSStatisticsBreakdown, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics/os", userID)
@@ -428,8 +419,8 @@ func (c *Client) GetUserOSStatistics(userID int, params StatisticsParams) (*mode
 // Required params: From, To
 // Optional: Precision
 func (c *Client) GetShowOSStatistics(showID int, params StatisticsParams) (*models.OSStatisticsBreakdown, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics/os", showID)
@@ -447,8 +438,8 @@ func (c *Client) GetShowOSStatistics(showID int, params StatisticsParams) (*mode
 // Required params: From, To
 // Optional: Precision
 func (c *Client) GetEpisodeOSStatistics(episodeID int, params StatisticsParams) (*models.OSStatisticsBreakdown, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d/statistics/os", episodeID)
@@ -468,10 +459,9 @@ func (c *Client) GetEpisodeOSStatistics(episodeID int, params StatisticsParams) 
 // GetUserGeographicStatistics retrieves a user's geographic statistics.
 // API: GET /v2/users/{user_id}/statistics/geographics
 // Required params: From, To
-// Optional: Precision
 func (c *Client) GetUserGeographicStatistics(userID int, params StatisticsParams) (*models.GeographicStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/statistics/geographics", userID)
@@ -487,10 +477,9 @@ func (c *Client) GetUserGeographicStatistics(userID int, params StatisticsParams
 // GetShowGeographicStatistics retrieves a show's geographic statistics.
 // API: GET /v2/shows/{show_id}/statistics/geographics
 // Required params: From, To
-// Optional: Precision
 func (c *Client) GetShowGeographicStatistics(showID int, params StatisticsParams) (*models.GeographicStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics/geographics", showID)
@@ -511,8 +500,8 @@ func (c *Client) GetShowGeographicStatistics(showID int, params StatisticsParams
 // API: GET /v2/shows/{show_id}/statistics/listeners
 // Required params: From, To, Group
 func (c *Client) GetShowListenersStatistics(showID int, params StatisticsParams) ([]models.ListenersStatistics, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d/statistics/listeners", showID)

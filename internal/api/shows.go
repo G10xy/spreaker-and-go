@@ -35,8 +35,8 @@ type CreateShowParams struct {
 // CreateShow creates a new podcast show.
 // API: POST /v2/shows
 func (c *Client) CreateShow(params CreateShowParams) (*models.Show, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	// Convert to form fields (Spreaker uses form data, not JSON)
@@ -75,8 +75,8 @@ type UpdateShowParams struct {
 // UpdateShow updates an existing show.
 // API: POST /v2/shows/{show_id}
 func (c *Client) UpdateShow(showID int, params UpdateShowParams) (*models.Show, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d", showID)
@@ -114,8 +114,8 @@ func (c *Client) UpdateShow(showID int, params UpdateShowParams) (*models.Show, 
 // DeleteShow deletes a show.
 // API: DELETE /v2/shows/{show_id}
 func (c *Client) DeleteShow(showID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/shows/%d", showID)
@@ -125,8 +125,8 @@ func (c *Client) DeleteShow(showID int) error {
 // AddShowToFavorites adds a show to the user's favorites.
 // API: PUT /v2/users/{user_id}/favorites/{show_id}
 func (c *Client) AddShowToFavorites(userID, showID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/favorites/%d", userID, showID)
@@ -137,10 +137,10 @@ func (c *Client) AddShowToFavorites(userID, showID int) error {
 // Requires authentication.
 // API: DELETE /v2/users/{user_id}/favorites/{show_id}
 func (c *Client) RemoveShowFromFavorites(userID, showID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
-
+	
 	path := fmt.Sprintf("/users/%d/favorites/%d", userID, showID)
 	return c.Delete(path, nil)
 }

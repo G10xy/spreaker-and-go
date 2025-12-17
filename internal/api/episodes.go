@@ -40,8 +40,8 @@ type UploadEpisodeParams struct {
 // UploadEpisode uploads a new episode to a show.
 // API: POST /v2/shows/{show_id}/episodes
 func (c *Client) UploadEpisode(showID int, params UploadEpisodeParams) (*models.Episode, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	if params.Title == "" {
@@ -109,8 +109,8 @@ type CreateDraftEpisodeParams struct {
 // The audio file can be uploaded later using UpdateEpisode with a media_file.
 // API: POST /v2/episodes/drafts
 func (c *Client) CreateDraftEpisode(params CreateDraftEpisodeParams) (*models.Episode, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	if params.Title == "" {
@@ -170,8 +170,8 @@ type UpdateEpisodeParams struct {
 // UpdateEpisode updates an existing episode.
 // API: POST /v2/episodes/{episode_id}
 func (c *Client) UpdateEpisode(episodeID int, params UpdateEpisodeParams) (*models.Episode, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d", episodeID)
@@ -234,8 +234,8 @@ func (c *Client) UpdateEpisode(episodeID int, params UpdateEpisodeParams) (*mode
 // DeleteEpisode deletes an episode.
 // API: DELETE /v2/episodes/{episode_id}
 func (c *Client) DeleteEpisode(episodeID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/episodes/%d", episodeID)
@@ -245,8 +245,8 @@ func (c *Client) DeleteEpisode(episodeID int) error {
 // LikeEpisode adds an episode to the user's likes.
 // API: PUT /v2/users/{user_id}/likes/{episode_id}
 func (c *Client) LikeEpisode(userID, episodeID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/likes/%d", userID, episodeID)
@@ -257,8 +257,8 @@ func (c *Client) LikeEpisode(userID, episodeID int) error {
 // Requires authentication.
 // API: DELETE /v2/users/{user_id}/likes/{episode_id}
 func (c *Client) UnlikeEpisode(userID, episodeID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/likes/%d", userID, episodeID)
@@ -266,7 +266,6 @@ func (c *Client) UnlikeEpisode(userID, episodeID int) error {
 }
 
 // CheckUserLikesEpisode checks if a user has liked a specific episode.
-// Returns true if the user likes the episode, false otherwise.
 // API: GET /v2/users/{user_id}/likes/{episode_id}
 func (c *Client) CheckUserLikesEpisode(userID, episodeID int) (bool, error) {
 	path := fmt.Sprintf("/users/%d/likes/%d", userID, episodeID)
@@ -302,8 +301,8 @@ func (c *Client) GetLikedEpisodes(userID int, pagination PaginationParams) (*Pag
 // the owner of the token used for authentication.
 // API: PUT /v2/users/{user_id}/bookmarks/{episode_id}
 func (c *Client) BookmarkEpisode(userID, episodeID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/bookmarks/%d", userID, episodeID)
@@ -311,12 +310,10 @@ func (c *Client) BookmarkEpisode(userID, episodeID int) error {
 }
 
 // UnbookmarkEpisode removes an episode from the user's bookmarks.
-// Note: You can only unbookmark episodes on your own account, so userID must match
-// the owner of the token used for authentication.
 // API: DELETE /v2/users/{user_id}/bookmarks/{episode_id}
 func (c *Client) UnbookmarkEpisode(userID, episodeID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/bookmarks/%d", userID, episodeID)

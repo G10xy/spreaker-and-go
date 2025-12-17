@@ -6,12 +6,15 @@ import (
 	"github.com/G10xy/spreaker-and-go/pkg/models"
 )
 
+// -----------------------------------------------------------------------------
+// Users API
+// -----------------------------------------------------------------------------
 
 // GetMe retrieves the authenticated user's profile.
 // API: GET /v2/me
 func (c *Client) GetMe() (*models.User, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required: call login first")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	var resp models.UserResponse
@@ -72,8 +75,8 @@ func (c *Client) GetUserFollowings(userID int, pagination PaginationParams) (*Pa
 //   - userID: The ID of the authenticated user (the one who wants to follow)
 //   - followingID: The ID of the user to follow
 func (c *Client) FollowUser(userID, followingID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/followings/%d", userID, followingID)
@@ -86,8 +89,8 @@ func (c *Client) FollowUser(userID, followingID int) error {
 //   - userID: The ID of the authenticated user (the one who wants to unfollow)
 //   - followingID: The ID of the user to unfollow
 func (c *Client) UnfollowUser(userID, followingID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/followings/%d", userID, followingID)
@@ -112,8 +115,8 @@ type UpdateUserParams struct {
 // UpdateUser updates a user's profile.
 // API: POST /v2/users/{user_id}
 func (c *Client) UpdateUser(userID int, params UpdateUserParams) (*models.User, error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d", userID)
@@ -169,8 +172,8 @@ func (c *Client) UpdateUser(userID int, params UpdateUserParams) (*models.User, 
 // GetUserBlocks retrieves a user's blocked users list.
 // API: GET /v2/users/{user_id}/blocks
 func (c *Client) GetUserBlocks(userID int, pagination PaginationParams) (*PaginatedResult[models.User], error) {
-	if c.Token == "" {
-		return nil, fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/blocks", userID)
@@ -183,8 +186,8 @@ func (c *Client) GetUserBlocks(userID int, pagination PaginationParams) (*Pagina
 //   - userID: The ID of the authenticated user (the one who wants to block)
 //   - blockedID: The ID of the user to block
 func (c *Client) BlockUser(userID, blockedID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/blocks/%d", userID, blockedID)
@@ -197,8 +200,8 @@ func (c *Client) BlockUser(userID, blockedID int) error {
 //   - userID: The ID of the authenticated user (the one who wants to unblock)
 //   - blockedID: The ID of the user to unblock
 func (c *Client) UnblockUser(userID, blockedID int) error {
-	if c.Token == "" {
-		return fmt.Errorf("authentication required")
+	if err := c.CheckAuth(); err != nil {
+		return nil, err
 	}
 
 	path := fmt.Sprintf("/users/%d/blocks/%d", userID, blockedID)
