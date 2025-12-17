@@ -813,3 +813,53 @@ func (f *Formatter) printChaptersTable(chapters []models.Chapter) {
 
 	tw.Flush()
 }
+
+// -----------------------------------------------------------------------------
+// Episode Messages Output
+// -----------------------------------------------------------------------------
+
+func (f *Formatter) PrintMessages(messages []models.Message) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(messages)
+	case FormatPlain:
+		for _, m := range messages {
+			fmt.Fprintf(f.writer, "%d\t%s\t%s\t%s\n",
+				m.MessageID,
+				m.AuthorUsername,
+				m.CreatedAt,
+				m.Text,
+			)
+		}
+	default:
+		f.printMessagesTable(messages)
+	}
+}
+
+func (f *Formatter) printMessagesTable(messages []models.Message) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "ID\tAUTHOR\tDATE\tMESSAGE")
+	fmt.Fprintln(tw, "--\t------\t----\t-------")
+
+	for _, m := range messages {
+		date := m.CreatedAt
+		if len(date) > 10 {
+			date = date[:10]
+		}
+
+		author := m.AuthorFullname
+		if m.AuthorIsOwner {
+			author = author + " ★"
+		}
+
+		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
+			m.MessageID,
+			truncate(author, 20),
+			date,
+			truncate(m.Text, 50),
+		)
+	}
+
+	tw.Flush()
+}
