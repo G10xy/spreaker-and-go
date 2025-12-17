@@ -766,3 +766,50 @@ func (f *Formatter) printCuepointsTable(cuepoints []models.Cuepoint) {
 
 	tw.Flush()
 }
+
+// -----------------------------------------------------------------------------
+// Episode Chapters Output
+// -----------------------------------------------------------------------------
+
+func (f *Formatter) PrintChapters(chapters []models.Chapter) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(chapters)
+	case FormatPlain:
+		for _, c := range chapters {
+			fmt.Fprintf(f.writer, "%d\t%d\t%s\n", c.ChapterID, c.StartsAt, c.Title)
+		}
+	default:
+		f.printChaptersTable(chapters)
+	}
+}
+
+func (f *Formatter) printChaptersTable(chapters []models.Chapter) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "ID\tSTARTS AT (ms)\tTIME\tTITLE\tURL")
+	fmt.Fprintln(tw, "--\t--------------\t----\t-----\t---")
+
+	for _, c := range chapters {
+		// Convert milliseconds to human-readable time (mm:ss)
+		totalSeconds := c.StartsAt / 1000
+		minutes := totalSeconds / 60
+		seconds := totalSeconds % 60
+		timeStr := fmt.Sprintf("%d:%02d", minutes, seconds)
+
+		url := c.ExternalURL
+		if url == "" {
+			url = "-"
+		}
+
+		fmt.Fprintf(tw, "%d\t%d\t%s\t%s\t%s\n",
+			c.ChapterID,
+			c.StartsAt,
+			timeStr,
+			truncate(c.Title, 40),
+			truncate(url, 40),
+		)
+	}
+
+	tw.Flush()
+}

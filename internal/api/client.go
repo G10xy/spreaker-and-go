@@ -1,22 +1,3 @@
-/*
-Package api provides a client for the Spreaker API.
-
-This package handles all HTTP communication with Spreaker, including:
-  - Authentication via OAuth2 Bearer tokens
-  - Request/response serialization (JSON)
-  - Error handling and parsing API errors
-  - Rate limiting awareness
-  - Pagination support
-
-Usage:
-
-	client := api.NewClient("your-oauth-token")
-	user, err := client.GetMe()
-	if err != nil {
-	    log.Fatal(err)
-	}
-	fmt.Println(user.Fullname)
-*/
 package api
 
 import (
@@ -276,7 +257,6 @@ func (c *Client) PostForm(path string, fields map[string]string, result interfac
 		}
 	}
 
-	// Close the writer to finalize the form
 	if err := writer.Close(); err != nil {
 		return fmt.Errorf("failed to close form writer: %w", err)
 	}
@@ -402,7 +382,6 @@ func GetPaginated[T any](c *Client, path string, params map[string]string) (*Pag
 		return nil, c.parseErrorResponse(resp.StatusCode, body)
 	}
 
-	// Parse the response
 	var apiResp apiResponse
 	if err := json.Unmarshal(body, &apiResp); err != nil {
 		return nil, fmt.Errorf("failed to parse response: %w", err)
@@ -413,7 +392,6 @@ func GetPaginated[T any](c *Client, path string, params map[string]string) (*Pag
 		return nil, fmt.Errorf("failed to parse paginated response: %w", err)
 	}
 
-	// Parse the items
 	var items []T
 	if err := json.Unmarshal(paginated.Items, &items); err != nil {
 		return nil, fmt.Errorf("failed to parse items: %w", err)
@@ -430,13 +408,11 @@ func GetPaginated[T any](c *Client, path string, params map[string]string) (*Pag
 // Convenience: Pagination Parameters
 // -----------------------------------------------------------------------------
 
-// PaginationParams holds common pagination parameters.
 type PaginationParams struct {
-	Limit  int // Number of items per page (max 100)
-	Offset int // Starting offset
+	Limit  int 
+	Offset int 
 }
 
-// ToMap converts pagination params to a query parameter map.
 func (p PaginationParams) ToMap() map[string]string {
 	params := make(map[string]string)
 	if p.Limit > 0 {
