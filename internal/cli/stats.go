@@ -6,8 +6,6 @@ This file contains all commands for viewing statistics
 package cli
 
 import (
-	"fmt"
-	
 	"github.com/spf13/cobra"
 	
 	"github.com/G10xy/spreaker-and-go/internal/api"

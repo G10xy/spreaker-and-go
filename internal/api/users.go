@@ -76,7 +76,7 @@ func (c *Client) GetUserFollowings(userID int, pagination PaginationParams) (*Pa
 //   - followingID: The ID of the user to follow
 func (c *Client) FollowUser(userID, followingID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/followings/%d", userID, followingID)
@@ -90,7 +90,7 @@ func (c *Client) FollowUser(userID, followingID int) error {
 //   - followingID: The ID of the user to unfollow
 func (c *Client) UnfollowUser(userID, followingID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/followings/%d", userID, followingID)
@@ -187,7 +187,7 @@ func (c *Client) GetUserBlocks(userID int, pagination PaginationParams) (*Pagina
 //   - blockedID: The ID of the user to block
 func (c *Client) BlockUser(userID, blockedID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/blocks/%d", userID, blockedID)
@@ -201,7 +201,7 @@ func (c *Client) BlockUser(userID, blockedID int) error {
 //   - blockedID: The ID of the user to unblock
 func (c *Client) UnblockUser(userID, blockedID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/blocks/%d", userID, blockedID)

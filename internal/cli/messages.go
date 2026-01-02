@@ -7,8 +7,6 @@ to communicate with the author.
 package cli
 
 import (
-	"fmt"
-	
 	"github.com/spf13/cobra"
 	
 	"github.com/G10xy/spreaker-and-go/internal/api"

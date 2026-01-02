@@ -42,9 +42,3 @@ type Show struct {
 type ShowResponse struct {
 	Show Show `json:"show"`
 }
-
-// Category represents a show category.
-type Category struct {
-	CategoryID int    `json:"category_id"`
-	Name       string `json:"name"`
-}

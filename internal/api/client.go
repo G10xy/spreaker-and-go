@@ -426,7 +426,7 @@ func (p PaginationParams) ToMap() map[string]string {
 
 
 func (c *Client) CheckAuth() error {
-    if c.token == "" {
+    if c.Token == "" {
         return fmt.Errorf("authentication required: this endpoint requires an OAuth token")
     }
     return nil

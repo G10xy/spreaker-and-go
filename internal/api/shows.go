@@ -115,7 +115,7 @@ func (c *Client) UpdateShow(showID int, params UpdateShowParams) (*models.Show, 
 // API: DELETE /v2/shows/{show_id}
 func (c *Client) DeleteShow(showID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/shows/%d", showID)
@@ -126,7 +126,7 @@ func (c *Client) DeleteShow(showID int) error {
 // API: PUT /v2/users/{user_id}/favorites/{show_id}
 func (c *Client) AddShowToFavorites(userID, showID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/favorites/%d", userID, showID)
@@ -138,7 +138,7 @@ func (c *Client) AddShowToFavorites(userID, showID int) error {
 // API: DELETE /v2/users/{user_id}/favorites/{show_id}
 func (c *Client) RemoveShowFromFavorites(userID, showID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 	
 	path := fmt.Sprintf("/users/%d/favorites/%d", userID, showID)

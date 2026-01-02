@@ -235,7 +235,7 @@ func (c *Client) UpdateEpisode(episodeID int, params UpdateEpisodeParams) (*mode
 // API: DELETE /v2/episodes/{episode_id}
 func (c *Client) DeleteEpisode(episodeID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/episodes/%d", episodeID)
@@ -246,7 +246,7 @@ func (c *Client) DeleteEpisode(episodeID int) error {
 // API: PUT /v2/users/{user_id}/likes/{episode_id}
 func (c *Client) LikeEpisode(userID, episodeID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/likes/%d", userID, episodeID)
@@ -258,7 +258,7 @@ func (c *Client) LikeEpisode(userID, episodeID int) error {
 // API: DELETE /v2/users/{user_id}/likes/{episode_id}
 func (c *Client) UnlikeEpisode(userID, episodeID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/likes/%d", userID, episodeID)
@@ -302,7 +302,7 @@ func (c *Client) GetLikedEpisodes(userID int, pagination PaginationParams) (*Pag
 // API: PUT /v2/users/{user_id}/bookmarks/{episode_id}
 func (c *Client) BookmarkEpisode(userID, episodeID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/bookmarks/%d", userID, episodeID)
@@ -313,7 +313,7 @@ func (c *Client) BookmarkEpisode(userID, episodeID int) error {
 // API: DELETE /v2/users/{user_id}/bookmarks/{episode_id}
 func (c *Client) UnbookmarkEpisode(userID, episodeID int) error {
 	if err := c.CheckAuth(); err != nil {
-		return nil, err
+		return err
 	}
 
 	path := fmt.Sprintf("/users/%d/bookmarks/%d", userID, episodeID)
