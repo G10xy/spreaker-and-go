@@ -12,6 +12,10 @@ package cli
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"net/http"
+	"io"
+	"strings"
 
 	"github.com/spf13/cobra"
 
@@ -29,7 +33,8 @@ Examples:
   spreaker episodes list                    # List episodes (uses default show)
   spreaker episodes list 12345              # List episodes of show 12345
   spreaker episodes get 67890               # Get episode details
-  spreaker episodes upload 12345 ./ep.mp3   # Upload a new episode`,
+  spreaker episodes upload 12345 ./ep.mp3   # Upload a new episode,
+  spreaker episodes download 67890          # Download an episode`,
 	}
 
 	cmd.AddCommand(
@@ -37,6 +42,7 @@ Examples:
 		newEpisodesGetCmd(),
 		newEpisodesUploadCmd(),
 		newEpisodesDeleteCmd(),
+		newEpisodesDownloadCmd(),
 	)
 
 	return cmd
@@ -270,4 +276,151 @@ func runEpisodesDelete(cmd *cobra.Command, args []string) error {
 	formatter := getFormatter(cmd)
 	formatter.PrintSuccess(fmt.Sprintf("Episode %d deleted", episodeID))
 	return nil
+}
+
+
+// -----------------------------------------------------------------------------
+// episodes download
+// -----------------------------------------------------------------------------
+
+func newEpisodesDownloadCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "download <episode-id>",
+		Short: "Download an episode's audio file",
+		Long: `Download an episode's audio file to your local machine.
+
+By default, the file is saved with the episode title as filename.
+Use --output to specify a custom filename or path.
+Use --url-only to just print the download URL without downloading.
+
+Examples:
+  spreaker episodes download 67890
+
+  spreaker episodes download 67890 --output ~/podcasts/episode.mp3
+
+  # Just get the download URL
+  spreaker episodes download 67890 --url-only`,
+		Args: cobra.ExactArgs(1),
+		RunE: runEpisodesDownload,
+	}
+
+	cmd.Flags().StringP("output", "O", "", "Output file path (default: episode title)")
+	cmd.Flags().BoolP("url-only", "u", false, "Only print the download URL, don't download")
+
+	return cmd
+}
+
+func runEpisodesDownload(cmd *cobra.Command, args []string) error {
+	episodeID, err := parseEpisodeID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+
+	downloadURL, err := client.GetEpisodeDownloadURL(episodeID)
+	if err != nil {
+		return fmt.Errorf("failed to get download URL: %w", err)
+	}
+
+	// If --url-only flag is set, just print the URL and exit
+	urlOnly, _ := cmd.Flags().GetBool("url-only")
+	if urlOnly {
+		fmt.Println(downloadURL)
+		return nil
+	}
+
+	// Determine output filename
+	outputPath, _ := cmd.Flags().GetString("output")
+	if outputPath == "" {
+		episode, err := client.GetEpisode(episodeID)
+		if err != nil {
+			outputPath = fmt.Sprintf("episode_%d.mp3", episodeID)
+		} else {
+			outputPath = sanitizeFilename(episode.Title) + ".mp3"
+		}
+	}
+
+	// Ensure directory exists if path contains directories
+	dir := filepath.Dir(outputPath)
+	if dir != "." && dir != "" {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", dir, err)
+		}
+	}
+
+	formatter.PrintMessage(fmt.Sprintf("Downloading episode %d to %s...", episodeID, outputPath))
+
+	if err := downloadFile(downloadURL, outputPath); err != nil {
+		return fmt.Errorf("download failed: %w", err)
+	}
+
+	formatter.PrintSuccess(fmt.Sprintf("Downloaded to %s", outputPath))
+	return nil
+}
+
+// downloadFile downloads a file from the given URL to the specified path.
+func downloadFile(url, destPath string) error {
+	out, err := os.Create(destPath)
+	if err != nil {
+		return fmt.Errorf("failed to create file: %w", err)
+	}
+	defer out.Close()
+
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("server returned status %d", resp.StatusCode)
+	}
+
+	written, err := io.Copy(out, resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to write file: %w", err)
+	}
+
+	fmt.Printf("  Size: %.2f MB\n", float64(written)/(1024*1024))
+
+	return nil
+}
+
+func sanitizeFilename(name string) string {
+	replacer := strings.NewReplacer(
+		"/", "-",
+		"\\", "-",
+		":", "-",
+		"*", "",
+		"?", "",
+		"\"", "",
+		"<", "",
+		">", "",
+		"|", "",
+		"\n", " ",
+		"\r", "",
+		"\t", " ",
+	)
+
+	sanitized := replacer.Replace(name)
+
+	sanitized = strings.TrimSpace(sanitized)
+	sanitized = strings.Trim(sanitized, ".")
+
+	if len(sanitized) > 200 {
+		sanitized = sanitized[:200]
+	}
+
+	if sanitized == "" {
+		sanitized = "episode"
+	}
+
+	return sanitized
 }

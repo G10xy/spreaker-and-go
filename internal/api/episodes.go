@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/G10xy/spreaker-and-go/pkg/models"
 )
@@ -323,17 +324,41 @@ func (c *Client) UnbookmarkEpisode(userID, episodeID int) error {
 // GetEpisodeDownloadURL retrieves the download URL for an episode.
 // API: GET /v2/episodes/{episode_id}/download
 func (c *Client) GetEpisodeDownloadURL(episodeID int) (string, error) {
-	path := fmt.Sprintf("/episodes/%d/download", episodeID)
+    path := fmt.Sprintf("/episodes/%d/download", episodeID)
+    urlStr := c.buildURL(path)
 
-	// This endpoint returns a redirect URL
-	var resp struct {
-		URL string `json:"url"`
-	}
-	if err := c.Get(path, nil, &resp); err != nil {
-		return "", err
-	}
+    // Create a client that doesn't follow redirects
+    noRedirectClient := &http.Client{
+        CheckRedirect: func(req *http.Request, via []*http.Request) error {
+            return http.ErrUseLastResponse 
+        },
+        Timeout: c.HTTPClient.Timeout,
+    }
 
-	return resp.URL, nil
+    req, err := c.newRequest(http.MethodGet, urlStr, nil)
+    if err != nil {
+        return "", err
+    }
+
+    resp, err := noRedirectClient.Do(req)
+    if err != nil {
+        return "", fmt.Errorf("request failed: %w", err)
+    }
+    defer resp.Body.Close()
+
+    if resp.StatusCode >= 300 && resp.StatusCode < 400 {
+        location := resp.Header.Get("Location")
+        if location != "" {
+            return location, nil
+        }
+        return "", fmt.Errorf("redirect response but no Location header")
+    }
+
+    if resp.StatusCode == http.StatusOK {
+        return urlStr, nil
+    }
+
+    return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 }
 
 // GetEpisodePlayURL retrieves the streaming URL for an episode.
