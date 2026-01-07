@@ -1,0 +1,75 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggers on version tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.23'
+      
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+      
+      - name: Build for Linux AMD64
+        run: |
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }}" -o spreaker-linux-amd64 ./cmd/spreaker
+      
+      - name: Build for macOS ARM64 (Apple Silicon)
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }}" -o spreaker-macos-arm64 ./cmd/spreaker
+      
+      - name: Build for macOS AMD64 (Intel)
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }}" -o spreaker-macos-amd64 ./cmd/spreaker
+      
+      - name: Build for Windows AMD64
+        run: |
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }}" -o spreaker-windows-amd64.exe ./cmd/spreaker
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            spreaker-linux-amd64
+            spreaker-macos-arm64
+            spreaker-macos-amd64
+            spreaker-windows-amd64.exe
+          body: |
+            ## Installation
+            
+            Download the binary for your platform and make it executable:
+            
+            **Linux:**
+            ```bash
+            chmod +x spreaker-linux-amd64
+            sudo mv spreaker-linux-amd64 /usr/local/bin/spreaker
+            ```
+            
+            **macOS (Apple Silicon):**
+            ```bash
+            chmod +x spreaker-macos-arm64
+            sudo mv spreaker-macos-arm64 /usr/local/bin/spreaker
+            ```
+            
+            **macOS (Intel):**
+            ```bash
+            chmod +x spreaker-macos-amd64
+            sudo mv spreaker-macos-amd64 /usr/local/bin/spreaker
+            ```
+            
+            **Windows:**
+            - Download `spreaker-windows-amd64.exe`
+            - Rename to `spreaker.exe`
+            - Add to your PATH
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
