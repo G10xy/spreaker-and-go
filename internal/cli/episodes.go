@@ -41,8 +41,15 @@ Examples:
 		newEpisodesListCmd(),
 		newEpisodesGetCmd(),
 		newEpisodesUploadCmd(),
+		newEpisodesUpdateCmd(),
+		newEpisodesDraftCmd(),
 		newEpisodesDeleteCmd(),
 		newEpisodesDownloadCmd(),
+		newEpisodesLikesCmd(),
+		newEpisodesLikeCmd(),
+		newEpisodesUnlikeCmd(),
+		newEpisodesBookmarkCmd(),
+		newEpisodesUnbookmarkCmd(),
 	)
 
 	return cmd
@@ -423,4 +430,352 @@ func sanitizeFilename(name string) string {
 	}
 
 	return sanitized
+}
+
+// -----------------------------------------------------------------------------
+// episodes update
+// -----------------------------------------------------------------------------
+
+func newEpisodesUpdateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "update <episode-id>",
+		Short: "Update an episode",
+		Long: `Update an existing episode.
+
+Examples:
+  spreaker episodes update 67890 --title "New Title"
+  spreaker episodes update 67890 --description "New description"
+  spreaker episodes update 67890 --hidden`,
+		Args: cobra.ExactArgs(1),
+		RunE: runEpisodesUpdate,
+	}
+
+	cmd.Flags().String("title", "", "Episode title")
+	cmd.Flags().String("description", "", "Episode description")
+	cmd.Flags().StringSlice("tags", nil, "Tags (comma-separated)")
+	cmd.Flags().Bool("explicit", false, "Mark as explicit content")
+	cmd.Flags().Bool("downloadable", false, "Allow downloads")
+	cmd.Flags().Bool("hidden", false, "Hide the episode")
+
+	return cmd
+}
+
+func runEpisodesUpdate(cmd *cobra.Command, args []string) error {
+	episodeID, err := parseEpisodeID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	params := api.UpdateEpisodeParams{}
+
+	if cmd.Flags().Changed("title") {
+		val, _ := cmd.Flags().GetString("title")
+		params.Title = &val
+	}
+	if cmd.Flags().Changed("description") {
+		val, _ := cmd.Flags().GetString("description")
+		params.Description = &val
+	}
+	if cmd.Flags().Changed("tags") {
+		val, _ := cmd.Flags().GetStringSlice("tags")
+		params.Tags = &val
+	}
+	if cmd.Flags().Changed("explicit") {
+		val, _ := cmd.Flags().GetBool("explicit")
+		params.Explicit = &val
+	}
+	if cmd.Flags().Changed("downloadable") {
+		val, _ := cmd.Flags().GetBool("downloadable")
+		params.DownloadEnabled = &val
+	}
+	if cmd.Flags().Changed("hidden") {
+		val, _ := cmd.Flags().GetBool("hidden")
+		params.Hidden = &val
+	}
+
+	episode, err := client.UpdateEpisode(episodeID, params)
+	if err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess("Episode updated")
+	formatter.PrintEpisode(episode)
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// episodes draft
+// -----------------------------------------------------------------------------
+
+func newEpisodesDraftCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "draft <show-id>",
+		Short: "Create a draft episode",
+		Long: `Create a draft episode without an audio file.
+
+The audio file can be uploaded later.
+
+Examples:
+  spreaker episodes draft 12345 --title "Upcoming Episode"
+  spreaker episodes draft 12345 --title "Draft" --description "Work in progress"`,
+		Args: cobra.ExactArgs(1),
+		RunE: runEpisodesDraft,
+	}
+
+	cmd.Flags().String("title", "", "Episode title (required)")
+	cmd.Flags().String("description", "", "Episode description")
+	cmd.Flags().StringSlice("tags", nil, "Tags (comma-separated)")
+	cmd.Flags().Bool("explicit", false, "Mark as explicit content")
+	cmd.Flags().Bool("downloadable", true, "Allow downloads")
+	cmd.Flags().Bool("hidden", false, "Hide the episode")
+
+	cmd.MarkFlagRequired("title")
+
+	return cmd
+}
+
+func runEpisodesDraft(cmd *cobra.Command, args []string) error {
+	showID, err := parseShowID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	title, _ := cmd.Flags().GetString("title")
+	description, _ := cmd.Flags().GetString("description")
+	tags, _ := cmd.Flags().GetStringSlice("tags")
+	explicit, _ := cmd.Flags().GetBool("explicit")
+	downloadable, _ := cmd.Flags().GetBool("downloadable")
+	hidden, _ := cmd.Flags().GetBool("hidden")
+
+	params := api.CreateDraftEpisodeParams{
+		Title:           title,
+		ShowID:          showID,
+		Description:     description,
+		Tags:            tags,
+		Explicit:        explicit,
+		DownloadEnabled: downloadable,
+		Hidden:          hidden,
+	}
+
+	episode, err := client.CreateDraftEpisode(params)
+	if err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess(fmt.Sprintf("Draft episode created with ID %d", episode.EpisodeID))
+	formatter.PrintEpisode(episode)
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// episodes likes
+// -----------------------------------------------------------------------------
+
+func newEpisodesLikesCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "likes",
+		Short: "List your liked episodes",
+		RunE:  runEpisodesLikes,
+	}
+
+	cmd.Flags().IntP("limit", "l", 20, "Maximum number of episodes to list")
+
+	return cmd
+}
+
+func runEpisodesLikes(cmd *cobra.Command, args []string) error {
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	me, err := client.GetMe()
+	if err != nil {
+		return err
+	}
+
+	limit, _ := cmd.Flags().GetInt("limit")
+	result, err := client.GetLikedEpisodes(me.UserID, api.PaginationParams{Limit: limit})
+	if err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+
+	if len(result.Items) == 0 {
+		formatter.PrintMessage("No liked episodes.")
+		return nil
+	}
+
+	formatter.PrintEpisodes(result.Items)
+
+	if result.HasMore {
+		formatter.PrintMessage("\n(more episodes available, use --limit to see more)")
+	}
+
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// episodes like
+// -----------------------------------------------------------------------------
+
+func newEpisodesLikeCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "like <episode-id>",
+		Short: "Like an episode",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runEpisodesLike,
+	}
+}
+
+func runEpisodesLike(cmd *cobra.Command, args []string) error {
+	episodeID, err := parseEpisodeID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	me, err := client.GetMe()
+	if err != nil {
+		return err
+	}
+
+	if err := client.LikeEpisode(me.UserID, episodeID); err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess(fmt.Sprintf("Liked episode %d", episodeID))
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// episodes unlike
+// -----------------------------------------------------------------------------
+
+func newEpisodesUnlikeCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "unlike <episode-id>",
+		Short: "Unlike an episode",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runEpisodesUnlike,
+	}
+}
+
+func runEpisodesUnlike(cmd *cobra.Command, args []string) error {
+	episodeID, err := parseEpisodeID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	me, err := client.GetMe()
+	if err != nil {
+		return err
+	}
+
+	if err := client.UnlikeEpisode(me.UserID, episodeID); err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess(fmt.Sprintf("Unliked episode %d", episodeID))
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// episodes bookmark
+// -----------------------------------------------------------------------------
+
+func newEpisodesBookmarkCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "bookmark <episode-id>",
+		Short: "Bookmark an episode",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runEpisodesBookmark,
+	}
+}
+
+func runEpisodesBookmark(cmd *cobra.Command, args []string) error {
+	episodeID, err := parseEpisodeID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	me, err := client.GetMe()
+	if err != nil {
+		return err
+	}
+
+	if err := client.BookmarkEpisode(me.UserID, episodeID); err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess(fmt.Sprintf("Bookmarked episode %d", episodeID))
+	return nil
+}
+
+// -----------------------------------------------------------------------------
+// episodes unbookmark
+// -----------------------------------------------------------------------------
+
+func newEpisodesUnbookmarkCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "unbookmark <episode-id>",
+		Short: "Remove an episode from bookmarks",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runEpisodesUnbookmark,
+	}
+}
+
+func runEpisodesUnbookmark(cmd *cobra.Command, args []string) error {
+	episodeID, err := parseEpisodeID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	me, err := client.GetMe()
+	if err != nil {
+		return err
+	}
+
+	if err := client.UnbookmarkEpisode(me.UserID, episodeID); err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess(fmt.Sprintf("Removed episode %d from bookmarks", episodeID))
+	return nil
 }
