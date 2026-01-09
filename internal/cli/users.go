@@ -326,7 +326,6 @@ func runUsersFollow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get current user ID
 	me, err := client.GetMe()
 	if err != nil {
 		return err
@@ -365,7 +364,6 @@ func runUsersUnfollow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get current user ID
 	me, err := client.GetMe()
 	if err != nil {
 		return err
@@ -402,7 +400,6 @@ func runUsersBlocks(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get current user ID
 	me, err := client.GetMe()
 	if err != nil {
 		return err
@@ -454,7 +451,6 @@ func runUsersBlock(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get current user ID
 	me, err := client.GetMe()
 	if err != nil {
 		return err
@@ -493,7 +489,6 @@ func runUsersUnblock(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get current user ID
 	me, err := client.GetMe()
 	if err != nil {
 		return err
