@@ -49,6 +49,7 @@ Get started:
 		newLoginCmd(),
 		newMeCmd(),
 
+		newUsersCmd(),
 		newShowsCmd(),
 		newEpisodesCmd(),
 
