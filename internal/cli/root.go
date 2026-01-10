@@ -55,6 +55,7 @@ Get started:
 
 		newStatsCmd(),
 
+		newSearchCmd(),
 		newExploreCmd(),
 		newTagsCmd(),
 
