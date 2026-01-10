@@ -45,6 +45,7 @@ Examples:
 		newEpisodesDraftCmd(),
 		newEpisodesDeleteCmd(),
 		newEpisodesDownloadCmd(),
+		newEpisodesDownloadAllCmd(),
 		newEpisodesLikesCmd(),
 		newEpisodesLikeCmd(),
 		newEpisodesUnlikeCmd(),
@@ -430,6 +431,184 @@ func sanitizeFilename(name string) string {
 	}
 
 	return sanitized
+}
+
+// -----------------------------------------------------------------------------
+// episodes download-all
+// -----------------------------------------------------------------------------
+
+func newEpisodesDownloadAllCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "download-all <show-id>",
+		Short: "Download all episodes of a show",
+		Long: `Download all episodes of a show to your local machine.
+
+By default, episodes are saved to a directory named after the show title.
+Files that already exist are skipped (resume capability).
+
+Examples:
+  spreaker episodes download-all 12345
+
+  spreaker episodes download-all 12345 --output-dir ~/podcasts/myshow
+
+  spreaker episodes download-all 12345 --limit 10
+
+  # Force re-download of existing files
+  spreaker episodes download-all 12345 --no-skip-existing`,
+		Args: cobra.ExactArgs(1),
+		RunE: runEpisodesDownloadAll,
+	}
+
+	cmd.Flags().StringP("output-dir", "O", "", "Output directory (default: ./<show-title>/)")
+	cmd.Flags().Bool("skip-existing", true, "Skip episodes that already exist locally")
+	cmd.Flags().IntP("limit", "l", 0, "Maximum number of episodes to download (0 = all)")
+
+	return cmd
+}
+
+func runEpisodesDownloadAll(cmd *cobra.Command, args []string) error {
+	showID, err := parseShowID(args[0])
+	if err != nil {
+		return err
+	}
+
+	client, err := getClient(cmd)
+	if err != nil {
+		return err
+	}
+
+	formatter := getFormatter(cmd)
+
+	// Get show details for directory name
+	show, err := client.GetShow(showID)
+	if err != nil {
+		return fmt.Errorf("failed to get show details: %w", err)
+	}
+
+	// Determine output directory
+	outputDir, _ := cmd.Flags().GetString("output-dir")
+	if outputDir == "" {
+		outputDir = sanitizeFilename(show.Title)
+	}
+
+	// Create output directory
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		return fmt.Errorf("failed to create directory %s: %w", outputDir, err)
+	}
+
+	skipExisting, _ := cmd.Flags().GetBool("skip-existing")
+	limit, _ := cmd.Flags().GetInt("limit")
+
+	formatter.PrintMessage(fmt.Sprintf("Fetching episodes for show: %s", show.Title))
+
+	// Fetch all episodes using pagination
+	var allEpisodes []struct {
+		ID    int
+		Title string
+	}
+
+	pageLimit := 100
+	if limit > 0 && limit < pageLimit {
+		pageLimit = limit
+	}
+
+	result, err := client.GetShowEpisodes(showID, api.PaginationParams{Limit: pageLimit})
+	if err != nil {
+		return fmt.Errorf("failed to fetch episodes: %w", err)
+	}
+
+	for _, ep := range result.Items {
+		allEpisodes = append(allEpisodes, struct {
+			ID    int
+			Title string
+		}{ID: ep.EpisodeID, Title: ep.Title})
+		if limit > 0 && len(allEpisodes) >= limit {
+			break
+		}
+	}
+
+	// Continue fetching if there are more episodes and we haven't hit the limit
+	for result.HasMore && (limit == 0 || len(allEpisodes) < limit) {
+		nextLimit := pageLimit
+		if limit > 0 && limit-len(allEpisodes) < nextLimit {
+			nextLimit = limit - len(allEpisodes)
+		}
+
+		result, err = client.GetShowEpisodes(showID, api.PaginationParams{
+			Limit:  nextLimit,
+			LastID: result.Items[len(result.Items)-1].EpisodeID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to fetch episodes: %w", err)
+		}
+
+		for _, ep := range result.Items {
+			allEpisodes = append(allEpisodes, struct {
+				ID    int
+				Title string
+			}{ID: ep.EpisodeID, Title: ep.Title})
+			if limit > 0 && len(allEpisodes) >= limit {
+				break
+			}
+		}
+	}
+
+	if len(allEpisodes) == 0 {
+		formatter.PrintMessage("No episodes found.")
+		return nil
+	}
+
+	formatter.PrintMessage(fmt.Sprintf("Found %d episodes to download", len(allEpisodes)))
+
+	// Download statistics
+	var downloaded, skipped, failed int
+
+	for i, ep := range allEpisodes {
+		filename := sanitizeFilename(ep.Title) + ".mp3"
+		filePath := filepath.Join(outputDir, filename)
+
+		
+		if skipExisting {
+			if _, err := os.Stat(filePath); err == nil {
+				formatter.PrintMessage(fmt.Sprintf("[%d/%d] Skipping (exists): %s", i+1, len(allEpisodes), filename))
+				skipped++
+				continue
+			}
+		}
+
+		formatter.PrintMessage(fmt.Sprintf("[%d/%d] Downloading: %s", i+1, len(allEpisodes), filename))
+
+		
+		downloadURL, err := client.GetEpisodeDownloadURL(ep.ID)
+		if err != nil {
+			formatter.PrintError(fmt.Sprintf("  Failed to get download URL: %v", err))
+			failed++
+			continue
+		}
+
+		
+		if err := downloadFile(downloadURL, filePath); err != nil {
+			formatter.PrintError(fmt.Sprintf("  Download failed: %v", err))
+			failed++
+			continue
+		}
+
+		downloaded++
+	}
+
+	
+	formatter.PrintMessage("")
+	formatter.PrintMessage("Download complete!")
+	formatter.PrintMessage(fmt.Sprintf("  Downloaded: %d", downloaded))
+	if skipped > 0 {
+		formatter.PrintMessage(fmt.Sprintf("  Skipped:    %d", skipped))
+	}
+	if failed > 0 {
+		formatter.PrintMessage(fmt.Sprintf("  Failed:     %d", failed))
+	}
+	formatter.PrintMessage(fmt.Sprintf("  Location:   %s", outputDir))
+
+	return nil
 }
 
 // -----------------------------------------------------------------------------

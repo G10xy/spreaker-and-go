@@ -106,6 +106,23 @@ spreaker episodes download <episode-id> --url-only
 | `--output`, `-O` | Output file path (default: episode title) |
 | `--url-only`, `-u` | Only print the download URL |
 
+### episodes download-all
+
+Download all episodes of a show. Files that already exist are skipped by default (resume capability).
+
+```bash
+spreaker episodes download-all <show-id>
+spreaker episodes download-all <show-id> --output-dir ~/podcasts/myshow
+spreaker episodes download-all <show-id> --limit 10
+spreaker episodes download-all <show-id> --no-skip-existing
+```
+
+| Flag | Description |
+|------|-------------|
+| `--output-dir`, `-O` | Output directory (default: ./<show-title>/) |
+| `--skip-existing` | Skip episodes that already exist (default: true) |
+| `--limit`, `-l` | Maximum number of episodes to download (0 = all) |
+
 ### episodes likes
 
 List your liked episodes.
