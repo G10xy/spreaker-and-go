@@ -607,6 +607,153 @@ func (f *Formatter) printListenersStatisticsTable(stats []models.ListenersStatis
 	tw.Flush()
 }
 
+// PrintShowsPlayTotals prints play totals for each show.
+func (f *Formatter) PrintShowsPlayTotals(stats []models.ShowPlayTotals) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats {
+			fmt.Fprintf(f.writer, "%d\t%s\t%d\t%d\n", s.ShowID, s.Title, s.PlaysCount, s.DownloadsCount)
+		}
+	default:
+		f.printShowsPlayTotalsTable(stats)
+	}
+}
+
+func (f *Formatter) printShowsPlayTotalsTable(stats []models.ShowPlayTotals) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "SHOW ID\tTITLE\tPLAYS\tON DEMAND\tLIVE\tDOWNLOADS")
+	fmt.Fprintln(tw, "-------\t-----\t-----\t---------\t----\t---------")
+
+	for _, s := range stats {
+		fmt.Fprintf(tw, "%d\t%s\t%d\t%d\t%d\t%d\n",
+			s.ShowID, truncate(s.Title, 30), s.PlaysCount, s.PlaysOndemandCount, s.PlaysLiveCount, s.DownloadsCount)
+	}
+
+	tw.Flush()
+}
+
+// PrintEpisodesPlayTotals prints play totals for each episode.
+func (f *Formatter) PrintEpisodesPlayTotals(stats []models.EpisodePlayTotals) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats {
+			fmt.Fprintf(f.writer, "%d\t%s\t%d\t%d\n", s.EpisodeID, s.Title, s.PlaysCount, s.DownloadsCount)
+		}
+	default:
+		f.printEpisodesPlayTotalsTable(stats)
+	}
+}
+
+func (f *Formatter) printEpisodesPlayTotalsTable(stats []models.EpisodePlayTotals) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "EPISODE ID\tTITLE\tPLAYS\tON DEMAND\tLIVE\tDOWNLOADS")
+	fmt.Fprintln(tw, "----------\t-----\t-----\t---------\t----\t---------")
+
+	for _, s := range stats {
+		fmt.Fprintf(tw, "%d\t%s\t%d\t%d\t%d\t%d\n",
+			s.EpisodeID, truncate(s.Title, 30), s.PlaysCount, s.PlaysOndemandCount, s.PlaysLiveCount, s.DownloadsCount)
+	}
+
+	tw.Flush()
+}
+
+// PrintLikesStatistics prints time-series likes statistics.
+func (f *Formatter) PrintLikesStatistics(stats []models.LikesStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats {
+			fmt.Fprintf(f.writer, "%s\t%d\n", s.Date, s.LikesCount)
+		}
+	default:
+		f.printLikesStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printLikesStatisticsTable(stats []models.LikesStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "DATE\tLIKES")
+	fmt.Fprintln(tw, "----\t-----")
+
+	for _, s := range stats {
+		fmt.Fprintf(tw, "%s\t%d\n", s.Date, s.LikesCount)
+	}
+
+	tw.Flush()
+}
+
+// PrintFollowersStatistics prints time-series followers statistics.
+func (f *Formatter) PrintFollowersStatistics(stats []models.FollowersStatistics) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats {
+			fmt.Fprintf(f.writer, "%s\t%d\n", s.Date, s.FollowersCount)
+		}
+	default:
+		f.printFollowersStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printFollowersStatisticsTable(stats []models.FollowersStatistics) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "DATE\tFOLLOWERS")
+	fmt.Fprintln(tw, "----\t---------")
+
+	for _, s := range stats {
+		fmt.Fprintf(tw, "%s\t%d\n", s.Date, s.FollowersCount)
+	}
+
+	tw.Flush()
+}
+
+// PrintOSStatistics prints operating system breakdown statistics.
+func (f *Formatter) PrintOSStatistics(stats *models.OSStatisticsBreakdown) {
+	switch f.format {
+	case FormatJSON:
+		f.printJSON(stats)
+	case FormatPlain:
+		for _, s := range stats.Desktop {
+			fmt.Fprintf(f.writer, "desktop\t%s\t%.1f%%\n", s.Name, s.Percentage)
+		}
+		for _, s := range stats.Mobile {
+			fmt.Fprintf(f.writer, "mobile\t%s\t%.1f%%\n", s.Name, s.Percentage)
+		}
+	default:
+		f.printOSStatisticsTable(stats)
+	}
+}
+
+func (f *Formatter) printOSStatisticsTable(stats *models.OSStatisticsBreakdown) {
+	tw := f.tabw()
+
+	fmt.Fprintln(tw, "=== Desktop ===")
+	fmt.Fprintln(tw, "OS\tPERCENTAGE")
+	fmt.Fprintln(tw, "--\t----------")
+	for _, s := range stats.Desktop {
+		fmt.Fprintf(tw, "%s\t%.1f%%\n", s.Name, s.Percentage)
+	}
+
+	fmt.Fprintln(tw, "")
+	fmt.Fprintln(tw, "=== Mobile ===")
+	fmt.Fprintln(tw, "OS\tPERCENTAGE")
+	fmt.Fprintln(tw, "--\t----------")
+	for _, s := range stats.Mobile {
+		fmt.Fprintf(tw, "%s\t%.1f%%\n", s.Name, s.Percentage)
+	}
+
+	tw.Flush()
+}
 
 // PrintExploreShows prints a list of shows from explore endpoints.
 func (f *Formatter) PrintExploreShows(shows []models.ExploreShow) {
