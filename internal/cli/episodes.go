@@ -536,7 +536,7 @@ func runEpisodesDownloadAll(cmd *cobra.Command, args []string) error {
 
 		result, err = client.GetShowEpisodes(showID, api.PaginationParams{
 			Limit:  nextLimit,
-			LastID: result.Items[len(result.Items)-1].EpisodeID,
+			Offset: result.Items[len(result.Items)-1].EpisodeID,
 		})
 		if err != nil {
 			return fmt.Errorf("failed to fetch episodes: %w", err)
@@ -581,14 +581,14 @@ func runEpisodesDownloadAll(cmd *cobra.Command, args []string) error {
 		
 		downloadURL, err := client.GetEpisodeDownloadURL(ep.ID)
 		if err != nil {
-			formatter.PrintError(fmt.Sprintf("  Failed to get download URL: %v", err))
+			formatter.PrintMessage(fmt.Sprintf("  Failed to get download URL: %v", err))
 			failed++
 			continue
 		}
 
-		
+
 		if err := downloadFile(downloadURL, filePath); err != nil {
-			formatter.PrintError(fmt.Sprintf("  Download failed: %v", err))
+			formatter.PrintMessage(fmt.Sprintf("  Download failed: %v", err))
 			failed++
 			continue
 		}
