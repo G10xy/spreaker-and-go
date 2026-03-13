@@ -32,12 +32,6 @@ type Episode struct {
 
 	MessagesCount int `json:"messages_count"`
 
-	DownloadEnabled bool `json:"download_enabled"`
-
-	Explicit bool `json:"explicit"`
-
-	Hidden bool `json:"hidden"`
-
 	Tags []string `json:"tags,omitempty"`
 
 	PublishedAt *CustomTime `json:"published_at,omitempty"`
@@ -47,6 +41,12 @@ type Episode struct {
 	MediaURL string `json:"media_url,omitempty"`
 
 	DownloadURL string `json:"download_url,omitempty"`
+
+	DownloadEnabled bool `json:"download_enabled"`
+
+	Explicit bool `json:"explicit"`
+
+	Hidden bool `json:"hidden"`
 }
 
 type EpisodeResponse struct {

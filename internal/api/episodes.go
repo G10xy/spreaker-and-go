@@ -33,11 +33,11 @@ type UploadEpisodeParams struct {
 
 	// Optional
 	Description     string   // Episode description/show notes
+	AutoPublishedAt string   // Schedule publishing (format: "2020-04-20 18:00:00")
 	Tags            []string // Tags for the episode
 	Explicit        bool     // Contains explicit content
 	DownloadEnabled bool     // Allow downloads
 	Hidden          bool     // Hidden/private episode
-	AutoPublishedAt string   // Schedule publishing (format: "2020-04-20 18:00:00")
 }
 
 // UploadEpisode uploads a new episode to a show.

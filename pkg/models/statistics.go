@@ -70,23 +70,23 @@ type PlayStatisticsResponse struct {
 type ShowPlayTotals struct {
 	ShowID             int    `json:"show_id"`
 	Title              string `json:"title"`
-	IsDeleted          bool   `json:"is_deleted"`
-	IsTransferred      bool   `json:"is_transferred"`
 	PlaysCount         int    `json:"plays_count"`
 	PlaysLiveCount     int    `json:"plays_live_count"`
 	PlaysOndemandCount int    `json:"plays_ondemand_count"`
 	DownloadsCount     int    `json:"downloads_count"`
+	IsDeleted          bool   `json:"is_deleted"`
+	IsTransferred      bool   `json:"is_transferred"`
 }
 
 type EpisodePlayTotals struct {
 	EpisodeID          int    `json:"episode_id"`
 	Title              string `json:"title"`
-	IsDeleted          bool   `json:"is_deleted"`
-	IsTransferred      bool   `json:"is_transferred"`
 	PlaysCount         int    `json:"plays_count"`
 	PlaysLiveCount     int    `json:"plays_live_count"`
 	PlaysOndemandCount int    `json:"plays_ondemand_count"`
 	DownloadsCount     int    `json:"downloads_count"`
+	IsDeleted          bool   `json:"is_deleted"`
+	IsTransferred      bool   `json:"is_transferred"`
 }
 
 // -----------------------------------------------------------------------------

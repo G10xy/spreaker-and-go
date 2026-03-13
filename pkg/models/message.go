@@ -25,9 +25,9 @@ type Message struct {
 
 	AuthorImageOriginalURL string `json:"author_image_original_url,omitempty"`
 
-	AuthorIsOwner bool `json:"author_is_owner"`
-
 	AppName string `json:"app_name,omitempty"`
 
 	AppURL string `json:"app_url,omitempty"`
+
+	AuthorIsOwner bool `json:"author_is_owner"`
 }

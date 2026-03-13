@@ -32,11 +32,11 @@ type Show struct {
 
 	LikesCount int `json:"likes_count"`
 
-	Explicit bool `json:"explicit"`
-
 	LastEpisodeAt *CustomTime `json:"last_episode_at,omitempty"`
 
 	CreatedAt *CustomTime `json:"created_at,omitempty"`
+
+	Explicit bool `json:"explicit"`
 }
 
 type ShowResponse struct {
