@@ -13,9 +13,10 @@ package cli
 
 import (
 	"fmt"
-	
+	"net/url"
+
 	"github.com/spf13/cobra"
-	
+
 	"github.com/G10xy/spreaker-and-go/internal/config"
 )
 
@@ -118,6 +119,10 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 		cfg.OutputFormat = value
 
 	case "api_url":
+		u, err := url.Parse(value)
+		if err != nil || u.Scheme != "https" {
+			return fmt.Errorf("api_url must be a valid HTTPS URL, got %q", value)
+		}
 		cfg.APIURL = value
 
 	default:
