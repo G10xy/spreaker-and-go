@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/G10xy/spreaker-and-go/pkg/models"
 )
@@ -348,10 +350,13 @@ func (c *Client) GetEpisodeDownloadURL(episodeID int) (string, error) {
 
     if resp.StatusCode >= 300 && resp.StatusCode < 400 {
         location := resp.Header.Get("Location")
-        if location != "" {
-            return location, nil
+        if location == "" {
+            return "", fmt.Errorf("redirect response but no Location header")
         }
-        return "", fmt.Errorf("redirect response but no Location header")
+        if err := validateDownloadURL(location); err != nil {
+            return "", fmt.Errorf("unsafe redirect URL: %w", err)
+        }
+        return location, nil
     }
 
     if resp.StatusCode == http.StatusOK {
@@ -359,6 +364,25 @@ func (c *Client) GetEpisodeDownloadURL(episodeID int) (string, error) {
     }
 
     return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+}
+
+// validateDownloadURL checks that a redirect URL is safe to follow.
+func validateDownloadURL(raw string) error {
+	u, err := url.Parse(raw)
+	if err != nil {
+		return fmt.Errorf("invalid URL: %w", err)
+	}
+	if u.Scheme != "https" {
+		return fmt.Errorf("URL must use HTTPS, got %q", u.Scheme)
+	}
+	host := strings.ToLower(u.Hostname())
+	allowedSuffixes := []string{".spreaker.com", ".spreaker.net"}
+	for _, suffix := range allowedSuffixes {
+		if host == suffix[1:] || strings.HasSuffix(host, suffix) {
+			return nil
+		}
+	}
+	return fmt.Errorf("URL hostname %q is not an allowed Spreaker domain", host)
 }
 
 // GetEpisodePlayURL retrieves the streaming URL for an episode.

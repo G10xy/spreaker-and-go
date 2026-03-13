@@ -5,6 +5,7 @@ package cli
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -19,6 +20,10 @@ import (
 func getClient(cmd *cobra.Command) (*api.Client, error) {
 	// Try to get token from --token flag first
 	token, _ := cmd.Flags().GetString("token")
+
+	if token != "" {
+		fmt.Fprintln(os.Stderr, "WARNING: passing tokens via --token exposes them in process listings. Use SPREAKER_TOKEN env var or 'spreaker login' instead.")
+	}
 
 	// Fall back to config (which also checks env vars)
 	if token == "" {

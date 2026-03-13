@@ -34,7 +34,11 @@ func DefaultConfig() *Config {
 func configDir() (string, error) {
 	// First, check if user set a custom config location
 	if dir := os.Getenv("SPREAKER_CONFIG_DIR"); dir != "" {
-		return dir, nil
+		cleaned := filepath.Clean(dir)
+		if !filepath.IsAbs(cleaned) {
+			return "", fmt.Errorf("SPREAKER_CONFIG_DIR must be an absolute path, got %q", dir)
+		}
+		return cleaned, nil
 	}
 
 	// Use the user's config directory (OS-appropriate)
@@ -120,6 +124,11 @@ func Save(cfg *Config) error {
 
 	if err := viper.WriteConfigAs(configPath); err != nil {
 		return fmt.Errorf("could not write config file: %w", err)
+	}
+
+	// Ensure the config file is only readable by the owner (contains token)
+	if err := os.Chmod(configPath, 0600); err != nil {
+		return fmt.Errorf("could not set config file permissions: %w", err)
 	}
 
 	return nil

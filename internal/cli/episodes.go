@@ -11,11 +11,12 @@ package cli
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
-	"net/http"
-	"io"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 
@@ -373,15 +374,15 @@ func runEpisodesDownload(cmd *cobra.Command, args []string) error {
 }
 
 // downloadFile downloads a file from the given URL to the specified path.
-func downloadFile(url, destPath string) error {
+func downloadFile(downloadURL, destPath string) error {
 	out, err := os.Create(destPath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer out.Close()
 
-
-	resp, err := http.Get(url)
+	client := &http.Client{Timeout: 10 * time.Minute}
+	resp, err := client.Get(downloadURL)
 	if err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}
