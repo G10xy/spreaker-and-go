@@ -321,13 +321,13 @@ func runShowsFavorites(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
 	limit, _ := cmd.Flags().GetInt("limit")
-	result, err := client.GetFavoriteShows(me.UserID, api.PaginationParams{Limit: limit})
+	result, err := client.GetFavoriteShows(userID, api.PaginationParams{Limit: limit})
 	if err != nil {
 		return err
 	}
@@ -372,12 +372,12 @@ func runShowsFavorite(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.AddShowToFavorites(me.UserID, showID); err != nil {
+	if err := client.AddShowToFavorites(userID, showID); err != nil {
 		return err
 	}
 
@@ -410,12 +410,12 @@ func runShowsUnfavorite(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.RemoveShowFromFavorites(me.UserID, showID); err != nil {
+	if err := client.RemoveShowFromFavorites(userID, showID); err != nil {
 		return err
 	}
 

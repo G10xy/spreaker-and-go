@@ -249,12 +249,12 @@ func runStatsPlaysUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	stats, err := client.GetUserPlayStatistics(me.UserID, api.StatisticsParams{
+	stats, err := client.GetUserPlayStatistics(userID, api.StatisticsParams{
 		From:  from,
 		To:    to,
 		Group: group,
@@ -350,12 +350,12 @@ func runStatsShowsTotals(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	result, err := client.GetUserShowsPlayTotals(me.UserID, api.StatisticsParams{
+	result, err := client.GetUserShowsPlayTotals(userID, api.StatisticsParams{
 		From: from,
 		To:   to,
 	}, api.PaginationParams{Limit: limit})
@@ -500,12 +500,12 @@ func runStatsLikesUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	stats, err := client.GetUserLikesStatistics(me.UserID, api.StatisticsParams{
+	stats, err := client.GetUserLikesStatistics(userID, api.StatisticsParams{
 		From:  from,
 		To:    to,
 		Group: group,
@@ -601,12 +601,12 @@ func runStatsFollowers(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	stats, err := client.GetUserFollowersStatistics(me.UserID, api.StatisticsParams{
+	stats, err := client.GetUserFollowersStatistics(userID, api.StatisticsParams{
 		From:  from,
 		To:    to,
 		Group: group,
@@ -700,12 +700,12 @@ func runStatsSourcesUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	stats, err := client.GetUserSourcesStatistics(me.UserID, api.StatisticsParams{
+	stats, err := client.GetUserSourcesStatistics(userID, api.StatisticsParams{
 		From:  from,
 		To:    to,
 		Group: group,
@@ -844,12 +844,12 @@ func runStatsDevicesUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	stats, err := client.GetUserDevicesStatistics(me.UserID, api.StatisticsParams{
+	stats, err := client.GetUserDevicesStatistics(userID, api.StatisticsParams{
 		From: from,
 		To:   to,
 	})
@@ -984,12 +984,12 @@ func runStatsOSUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	stats, err := client.GetUserOSStatistics(me.UserID, api.StatisticsParams{
+	stats, err := client.GetUserOSStatistics(userID, api.StatisticsParams{
 		From: from,
 		To:   to,
 	})
@@ -1124,12 +1124,12 @@ func runStatsGeoUser(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	stats, err := client.GetUserGeographicStatistics(me.UserID, api.StatisticsParams{
+	stats, err := client.GetUserGeographicStatistics(userID, api.StatisticsParams{
 		From: from,
 		To:   to,
 	})

@@ -13,6 +13,9 @@ import (
 type Config struct {
 	Token string `mapstructure:"token"`
 
+	// UserID is the authenticated user's ID, cached at login time.
+	UserID int `mapstructure:"user_id"`
+
 	DefaultShowID int `mapstructure:"default_show_id"`
 
 	// OutputFormat controls how results are displayed: "table", "json", "plain"
@@ -24,6 +27,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		Token:         "",
+		UserID:        0,
 		DefaultShowID: 0,
 		OutputFormat:  "table",
 		APIURL:        "https://api.spreaker.com",
@@ -78,6 +82,7 @@ func Load() (*Config, error) {
 	viper.AutomaticEnv() 
 
 	viper.SetDefault("token", cfg.Token)
+	viper.SetDefault("user_id", cfg.UserID)
 	viper.SetDefault("default_show_id", cfg.DefaultShowID)
 	viper.SetDefault("output_format", cfg.OutputFormat)
 	viper.SetDefault("api_url", cfg.APIURL)
@@ -113,6 +118,7 @@ func Save(cfg *Config) error {
 	}
 
 	viper.Set("token", cfg.Token)
+	viper.Set("user_id", cfg.UserID)
 	viper.Set("default_show_id", cfg.DefaultShowID)
 	viper.Set("output_format", cfg.OutputFormat)
 	viper.Set("api_url", cfg.APIURL)
@@ -134,14 +140,27 @@ func Save(cfg *Config) error {
 	return nil
 }
 
-// SaveToken is a convenience function to save just the API token.
-func SaveToken(token string) error {
+// SaveToken is a convenience function to save just the API token and user ID.
+func SaveToken(token string, userID int) error {
 	cfg, err := Load()
 	if err != nil {
 		return err
 	}
 	cfg.Token = token
+	cfg.UserID = userID
 	return Save(cfg)
+}
+
+// GetUserID returns the cached user ID from config.
+func GetUserID() (int, error) {
+	cfg, err := Load()
+	if err != nil {
+		return 0, err
+	}
+	if cfg.UserID == 0 {
+		return 0, fmt.Errorf("no cached user ID. Run 'spreaker login' to authenticate")
+	}
+	return cfg.UserID, nil
 }
 
 func GetToken() (string, error) {

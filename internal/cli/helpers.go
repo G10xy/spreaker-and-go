@@ -54,6 +54,12 @@ func getFormatter(cmd *cobra.Command) *output.Formatter {
 }
 
 
+// getMyUserID returns the authenticated user's ID from cached config,
+// avoiding an extra API round-trip to /v2/users/self.
+func getMyUserID() (int, error) {
+	return config.GetUserID()
+}
+
 func parseShowID(arg string) (int, error) {
     return parseIntArg(arg, "show ID")
 }

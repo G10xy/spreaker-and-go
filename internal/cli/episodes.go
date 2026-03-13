@@ -781,13 +781,13 @@ func runEpisodesLikes(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
 	limit, _ := cmd.Flags().GetInt("limit")
-	result, err := client.GetLikedEpisodes(me.UserID, api.PaginationParams{Limit: limit})
+	result, err := client.GetLikedEpisodes(userID, api.PaginationParams{Limit: limit})
 	if err != nil {
 		return err
 	}
@@ -832,12 +832,12 @@ func runEpisodesLike(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.LikeEpisode(me.UserID, episodeID); err != nil {
+	if err := client.LikeEpisode(userID, episodeID); err != nil {
 		return err
 	}
 
@@ -870,12 +870,12 @@ func runEpisodesUnlike(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.UnlikeEpisode(me.UserID, episodeID); err != nil {
+	if err := client.UnlikeEpisode(userID, episodeID); err != nil {
 		return err
 	}
 
@@ -908,12 +908,12 @@ func runEpisodesBookmark(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.BookmarkEpisode(me.UserID, episodeID); err != nil {
+	if err := client.BookmarkEpisode(userID, episodeID); err != nil {
 		return err
 	}
 
@@ -946,12 +946,12 @@ func runEpisodesUnbookmark(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.UnbookmarkEpisode(me.UserID, episodeID); err != nil {
+	if err := client.UnbookmarkEpisode(userID, episodeID); err != nil {
 		return err
 	}
 

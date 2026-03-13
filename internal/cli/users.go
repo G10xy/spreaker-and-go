@@ -111,8 +111,8 @@ func runUsersUpdate(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	// Get current user ID
-	me, err := client.GetMe()
+	// Get current user ID from cached config
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func runUsersUpdate(cmd *cobra.Command, args []string) error {
 		params.ContactEmail = &val
 	}
 
-	user, err := client.UpdateUser(me.UserID, params)
+	user, err := client.UpdateUser(userID, params)
 	if err != nil {
 		return err
 	}
@@ -326,12 +326,12 @@ func runUsersFollow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.FollowUser(me.UserID, followingID); err != nil {
+	if err := client.FollowUser(userID, followingID); err != nil {
 		return err
 	}
 
@@ -364,12 +364,12 @@ func runUsersUnfollow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.UnfollowUser(me.UserID, followingID); err != nil {
+	if err := client.UnfollowUser(userID, followingID); err != nil {
 		return err
 	}
 
@@ -400,13 +400,13 @@ func runUsersBlocks(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
 	limit, _ := cmd.Flags().GetInt("limit")
-	result, err := client.GetUserBlocks(me.UserID, api.PaginationParams{Limit: limit})
+	result, err := client.GetUserBlocks(userID, api.PaginationParams{Limit: limit})
 	if err != nil {
 		return err
 	}
@@ -451,12 +451,12 @@ func runUsersBlock(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.BlockUser(me.UserID, blockedID); err != nil {
+	if err := client.BlockUser(userID, blockedID); err != nil {
 		return err
 	}
 
@@ -489,12 +489,12 @@ func runUsersUnblock(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	me, err := client.GetMe()
+	userID, err := getMyUserID()
 	if err != nil {
 		return err
 	}
 
-	if err := client.UnblockUser(me.UserID, blockedID); err != nil {
+	if err := client.UnblockUser(userID, blockedID); err != nil {
 		return err
 	}
 

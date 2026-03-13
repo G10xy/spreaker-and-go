@@ -52,7 +52,7 @@ func runLogin(cmd *cobra.Command, args []string) error {
 	}
 
 
-	if err := config.SaveToken(token); err != nil {
+	if err := config.SaveToken(token, user.UserID); err != nil {
 		return fmt.Errorf("failed to save token: %w", err)
 	}
 
