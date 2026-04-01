@@ -323,7 +323,7 @@ func (f *Formatter) printStatisticsTable(stats *models.Statistics) {
 
 func (f *Formatter) PrintMessage(msg string) {
 	if f.color {
-		pterm.Info.Println(msg)
+		pterm.Info.WithWriter(f.writer).Println(msg)
 	} else {
 		fmt.Fprintln(f.writer, msg)
 	}
@@ -331,7 +331,7 @@ func (f *Formatter) PrintMessage(msg string) {
 
 func (f *Formatter) PrintError(err error) {
 	if f.color {
-		pterm.Error.Println(err.Error())
+		pterm.Error.WithWriter(os.Stderr).Println(err.Error())
 	} else {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 	}
@@ -339,7 +339,7 @@ func (f *Formatter) PrintError(err error) {
 
 func (f *Formatter) PrintSuccess(msg string) {
 	if f.color {
-		pterm.Success.Println(msg)
+		pterm.Success.WithWriter(f.writer).Println(msg)
 	} else {
 		fmt.Fprintf(f.writer, "✓ %s\n", msg)
 	}
@@ -347,7 +347,7 @@ func (f *Formatter) PrintSuccess(msg string) {
 
 func (f *Formatter) PrintWarning(msg string) {
 	if f.color {
-		pterm.Warning.Println(msg)
+		pterm.Warning.WithWriter(os.Stderr).Println(msg)
 	} else {
 		fmt.Fprintf(os.Stderr, "WARNING: %s\n", msg)
 	}
@@ -366,7 +366,7 @@ func (f *Formatter) renderTable(header []string, rows [][]string) {
 		}
 		data := pterm.TableData{coloredHeader}
 		data = append(data, rows...)
-		pterm.DefaultTable.WithHasHeader(true).WithData(data).Render()
+		pterm.DefaultTable.WithHasHeader(true).WithData(data).WithWriter(f.writer).Render()
 		return
 	}
 	tw := f.tabw()
@@ -389,7 +389,7 @@ func (f *Formatter) PrintKeyValue(pairs [][2]string) {
 		for i, p := range pairs {
 			data = append(data, []string{rgbPalette[i%len(rgbPalette)].Sprint(p[0]), p[1]})
 		}
-		pterm.DefaultTable.WithData(data).Render()
+		pterm.DefaultTable.WithData(data).WithWriter(f.writer).Render()
 		return
 	}
 	tw := f.tabw()
@@ -402,7 +402,7 @@ func (f *Formatter) PrintKeyValue(pairs [][2]string) {
 // renderSection renders a section header.
 func (f *Formatter) renderSection(title string) {
 	if f.color {
-		pterm.DefaultSection.Println(title)
+		pterm.DefaultSection.WithWriter(f.writer).Println(title)
 	} else {
 		fmt.Fprintf(f.writer, "=== %s ===\n", title)
 	}
@@ -414,7 +414,7 @@ func (f *Formatter) StartSpinner(msg string) *pterm.SpinnerPrinter {
 		fmt.Fprintln(f.writer, msg)
 		return nil
 	}
-	spinner, _ := pterm.DefaultSpinner.Start(msg)
+	spinner, _ := pterm.DefaultSpinner.WithWriter(f.writer).Start(msg)
 	return spinner
 }
 
@@ -440,7 +440,7 @@ func (f *Formatter) StartProgressBar(total int, title string) *pterm.Progressbar
 	if !f.color {
 		return nil
 	}
-	bar, _ := pterm.DefaultProgressbar.WithTotal(total).WithTitle(title).Start()
+	bar, _ := pterm.DefaultProgressbar.WithTotal(total).WithTitle(title).WithWriter(f.writer).Start()
 	return bar
 }
 
