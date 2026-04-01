@@ -1,10 +1,10 @@
-# spreaker-cli
+# spreaker-and-go
 
 A command-line interface for the [Spreaker](https://www.spreaker.com) podcast platform.
 
 ## Overview
 
-`spreaker-cli` allows you to manage your Spreaker podcasts directly from the terminal. You can manage shows, upload episodes, view statistics, search content, and more — without opening a browser.
+`spreaker-and-go` allows you to manage your Spreaker podcasts directly from the terminal. You can manage shows, upload episodes, view statistics, search content, and more — without opening a browser.
 
 ## Features
 
