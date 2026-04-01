@@ -57,7 +57,8 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("Config file: %s\n\n", config.ConfigFilePath())
+	formatter := getFormatter(cmd)
+	formatter.PrintMessage(fmt.Sprintf("Config file: %s", config.ConfigFilePath()))
 
 	// Mask the token for security.
 	tokenDisplay := "(not set)"
@@ -69,10 +70,12 @@ func runConfigShow(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	fmt.Printf("token:           %s\n", tokenDisplay)
-	fmt.Printf("default_show_id: %d\n", cfg.DefaultShowID)
-	fmt.Printf("output_format:   %s\n", cfg.OutputFormat)
-	fmt.Printf("api_url:         %s\n", cfg.APIURL)
+	formatter.PrintKeyValue([][2]string{
+		{"token:", tokenDisplay},
+		{"default_show_id:", fmt.Sprintf("%d", cfg.DefaultShowID)},
+		{"output_format:", cfg.OutputFormat},
+		{"api_url:", cfg.APIURL},
+	})
 	return nil
 }
 
@@ -133,7 +136,8 @@ func runConfigSet(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	fmt.Printf("✓ Set %s = %s\n", key, value)
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess(fmt.Sprintf("Set %s = %s", key, value))
 	return nil
 }
 

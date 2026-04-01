@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/G10xy/spreaker-and-go/pkg/models"
+	"github.com/pterm/pterm"
 )
 
 
@@ -32,10 +33,11 @@ const (
 type Formatter struct {
 	format Format
 	writer io.Writer
+	color  bool
 }
 
-// New creates a new Formatter with the specified format.
-func New(format string) *Formatter {
+// New creates a new Formatter with the specified format and color support.
+func New(format string, color bool) *Formatter {
 	f := Format(strings.ToLower(strings.TrimSpace(format)))
 
 	switch f {
@@ -44,9 +46,15 @@ func New(format string) *Formatter {
 		f = FormatTable
 	}
 
+	// Only enable color for table format
+	if f != FormatTable {
+		color = false
+	}
+
 	return &Formatter{
 		format: f,
 		writer: os.Stdout,
+		color:  color,
 	}
 }
 
@@ -84,44 +92,40 @@ func (f *Formatter) PrintUsers(users []models.User) {
 }
 
 func (f *Formatter) printUserTable(user *models.User) {
-	tw := f.tabw()
-
-	fmt.Fprintf(tw, "ID:\t%d\n", user.UserID)
-	fmt.Fprintf(tw, "Username:\t%s\n", user.Username)
-	fmt.Fprintf(tw, "Name:\t%s\n", user.Fullname)
-	fmt.Fprintf(tw, "Kind:\t%s\n", user.Kind)
-	fmt.Fprintf(tw, "Plan:\t%s\n", user.Plan)
-	fmt.Fprintf(tw, "Followers:\t%d\n", user.FollowersCount)
-	fmt.Fprintf(tw, "Following:\t%d\n", user.FollowingsCount)
-	fmt.Fprintf(tw, "URL:\t%s\n", user.SiteURL)
+	pairs := [][2]string{
+		{"ID:", fmt.Sprintf("%d", user.UserID)},
+		{"Username:", user.Username},
+		{"Name:", user.Fullname},
+		{"Kind:", user.Kind},
+		{"Plan:", user.Plan},
+		{"Followers:", fmt.Sprintf("%d", user.FollowersCount)},
+		{"Following:", fmt.Sprintf("%d", user.FollowingsCount)},
+		{"URL:", user.SiteURL},
+	}
 
 	if user.Description != "" {
 		desc := user.Description
 		if len(desc) > 80 {
 			desc = desc[:77] + "..."
 		}
-		fmt.Fprintf(tw, "Bio:\t%s\n", desc)
+		pairs = append(pairs, [2]string{"Bio:", desc})
 	}
 
-	tw.Flush()
+	f.PrintKeyValue(pairs)
 }
 
 func (f *Formatter) printUsersTable(users []models.User) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "ID\tUSERNAME\tNAME\tFOLLOWERS")
-	fmt.Fprintln(tw, "--\t--------\t----\t---------")
-
-	for _, u := range users {
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%d\n",
-			u.UserID,
+	header := []string{"ID", "USERNAME", "NAME", "FOLLOWERS"}
+	rows := make([][]string, len(users))
+	for i, u := range users {
+		rows[i] = []string{
+			fmt.Sprintf("%d", u.UserID),
 			u.Username,
 			truncate(u.Fullname, 30),
-			u.FollowersCount,
-		)
+			fmt.Sprintf("%d", u.FollowersCount),
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // -----------------------------------------------------------------------------
@@ -154,51 +158,45 @@ func (f *Formatter) PrintShows(shows []models.Show) {
 }
 
 func (f *Formatter) printShowTable(show *models.Show) {
-	tw := f.tabw()
-
-	fmt.Fprintf(tw, "ID:\t%d\n", show.ShowID)
-	fmt.Fprintf(tw, "Title:\t%s\n", show.Title)
-	fmt.Fprintf(tw, "Language:\t%s\n", show.Language)
-	fmt.Fprintf(tw, "Episodes:\t%d\n", show.EpisodesCount)
-	fmt.Fprintf(tw, "Followers:\t%d\n", show.FollowersCount)
-	fmt.Fprintf(tw, "Plays:\t%d\n", show.PlayCount)
-	fmt.Fprintf(tw, "Explicit:\t%v\n", show.Explicit)
-	fmt.Fprintf(tw, "URL:\t%s\n", show.SiteURL)
+	pairs := [][2]string{
+		{"ID:", fmt.Sprintf("%d", show.ShowID)},
+		{"Title:", show.Title},
+		{"Language:", show.Language},
+		{"Episodes:", fmt.Sprintf("%d", show.EpisodesCount)},
+		{"Followers:", fmt.Sprintf("%d", show.FollowersCount)},
+		{"Plays:", fmt.Sprintf("%d", show.PlayCount)},
+		{"Explicit:", fmt.Sprintf("%v", show.Explicit)},
+		{"URL:", show.SiteURL},
+	}
 
 	if show.Description != "" {
 		desc := show.Description
 		if len(desc) > 80 {
 			desc = desc[:77] + "..."
 		}
-		fmt.Fprintf(tw, "Description:\t%s\n", desc)
+		pairs = append(pairs, [2]string{"Description:", desc})
 	}
 
 	if show.LastEpisodeAt != nil {
-		fmt.Fprintf(tw, "Last Episode:\t%s\n", show.LastEpisodeAt.Format(time.DateTime))
+		pairs = append(pairs, [2]string{"Last Episode:", show.LastEpisodeAt.Format(time.DateTime)})
 	}
 
-	tw.Flush()
+	f.PrintKeyValue(pairs)
 }
 
 func (f *Formatter) printShowsTable(shows []models.Show) {
-	tw := f.tabw()
-
-	// Header
-	fmt.Fprintln(tw, "ID\tTITLE\tEPISODES\tFOLLOWERS\tPLAYS")
-	fmt.Fprintln(tw, "--\t-----\t--------\t---------\t-----")
-
-	// Rows
-	for _, s := range shows {
-		fmt.Fprintf(tw, "%d\t%s\t%d\t%d\t%d\n",
-			s.ShowID,
+	header := []string{"ID", "TITLE", "EPISODES", "FOLLOWERS", "PLAYS"}
+	rows := make([][]string, len(shows))
+	for i, s := range shows {
+		rows[i] = []string{
+			fmt.Sprintf("%d", s.ShowID),
 			truncate(s.Title, 40),
-			s.EpisodesCount,
-			s.FollowersCount,
-			s.PlayCount,
-		)
+			fmt.Sprintf("%d", s.EpisodesCount),
+			fmt.Sprintf("%d", s.FollowersCount),
+			fmt.Sprintf("%d", s.PlayCount),
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // -----------------------------------------------------------------------------
@@ -230,25 +228,25 @@ func (f *Formatter) PrintEpisodes(episodes []models.Episode) {
 }
 
 func (f *Formatter) printEpisodeTable(episode *models.Episode) {
-	tw := f.tabw()
-
-	fmt.Fprintf(tw, "ID:\t%d\n", episode.EpisodeID)
-	fmt.Fprintf(tw, "Title:\t%s\n", episode.Title)
-	fmt.Fprintf(tw, "Show ID:\t%d\n", episode.ShowID)
-	fmt.Fprintf(tw, "Duration:\t%s\n", formatDuration(episode.Duration))
-	fmt.Fprintf(tw, "Plays:\t%d\n", episode.PlayCount)
-	fmt.Fprintf(tw, "Likes:\t%d\n", episode.LikesCount)
-	fmt.Fprintf(tw, "Status:\t%s\n", episode.EncodingStatus)
-	fmt.Fprintf(tw, "Explicit:\t%v\n", episode.Explicit)
-	fmt.Fprintf(tw, "Downloads:\t%v\n", episode.DownloadEnabled)
-	fmt.Fprintf(tw, "URL:\t%s\n", episode.SiteURL)
+	pairs := [][2]string{
+		{"ID:", fmt.Sprintf("%d", episode.EpisodeID)},
+		{"Title:", episode.Title},
+		{"Show ID:", fmt.Sprintf("%d", episode.ShowID)},
+		{"Duration:", formatDuration(episode.Duration)},
+		{"Plays:", fmt.Sprintf("%d", episode.PlayCount)},
+		{"Likes:", fmt.Sprintf("%d", episode.LikesCount)},
+		{"Status:", episode.EncodingStatus},
+		{"Explicit:", fmt.Sprintf("%v", episode.Explicit)},
+		{"Downloads:", fmt.Sprintf("%v", episode.DownloadEnabled)},
+		{"URL:", episode.SiteURL},
+	}
 
 	if episode.PublishedAt != nil {
-		fmt.Fprintf(tw, "Published:\t%s\n", episode.PublishedAt.Format(time.DateTime))
+		pairs = append(pairs, [2]string{"Published:", episode.PublishedAt.Format(time.DateTime)})
 	}
 
 	if len(episode.Tags) > 0 {
-		fmt.Fprintf(tw, "Tags:\t%s\n", strings.Join(episode.Tags, ", "))
+		pairs = append(pairs, [2]string{"Tags:", strings.Join(episode.Tags, ", ")})
 	}
 
 	if episode.Description != "" {
@@ -256,37 +254,30 @@ func (f *Formatter) printEpisodeTable(episode *models.Episode) {
 		if len(desc) > 80 {
 			desc = desc[:77] + "..."
 		}
-		fmt.Fprintf(tw, "Description:\t%s\n", desc)
+		pairs = append(pairs, [2]string{"Description:", desc})
 	}
 
-	tw.Flush()
+	f.PrintKeyValue(pairs)
 }
 
 func (f *Formatter) printEpisodesTable(episodes []models.Episode) {
-	tw := f.tabw()
-
-	// Header
-	fmt.Fprintln(tw, "ID\tTITLE\tDURATION\tPLAYS\tSTATUS\tPUBLISHED")
-	fmt.Fprintln(tw, "--\t-----\t--------\t-----\t------\t---------")
-
-	// Rows
-	for _, e := range episodes {
+	header := []string{"ID", "TITLE", "DURATION", "PLAYS", "STATUS", "PUBLISHED"}
+	rows := make([][]string, len(episodes))
+	for i, e := range episodes {
 		published := "-"
 		if e.PublishedAt != nil {
 			published = e.PublishedAt.Format(time.DateTime)
 		}
-
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%d\t%s\t%s\n",
-			e.EpisodeID,
+		rows[i] = []string{
+			fmt.Sprintf("%d", e.EpisodeID),
 			truncate(e.Title, 35),
 			formatDuration(e.Duration),
-			e.PlayCount,
+			fmt.Sprintf("%d", e.PlayCount),
 			e.EncodingStatus,
 			published,
-		)
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // -----------------------------------------------------------------------------
@@ -307,14 +298,12 @@ func (f *Formatter) PrintStatistics(stats *models.Statistics) {
 }
 
 func (f *Formatter) printStatisticsTable(stats *models.Statistics) {
-	tw := f.tabw()
-
-	fmt.Fprintf(tw, "Plays:\t%d\n", stats.Plays)
-	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.Downloads)
-	fmt.Fprintf(tw, "Likes:\t%d\n", stats.Likes)
-	fmt.Fprintf(tw, "Messages:\t%d\n", stats.Messages)
-
-	tw.Flush()
+	f.PrintKeyValue([][2]string{
+		{"Plays:", fmt.Sprintf("%d", stats.Plays)},
+		{"Downloads:", fmt.Sprintf("%d", stats.Downloads)},
+		{"Likes:", fmt.Sprintf("%d", stats.Likes)},
+		{"Messages:", fmt.Sprintf("%d", stats.Messages)},
+	})
 }
 
 // -----------------------------------------------------------------------------
@@ -322,15 +311,122 @@ func (f *Formatter) printStatisticsTable(stats *models.Statistics) {
 // -----------------------------------------------------------------------------
 
 func (f *Formatter) PrintMessage(msg string) {
-	fmt.Fprintln(f.writer, msg)
+	if f.color {
+		pterm.Info.Println(msg)
+	} else {
+		fmt.Fprintln(f.writer, msg)
+	}
 }
 
 func (f *Formatter) PrintError(err error) {
-	fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	if f.color {
+		pterm.Error.Println(err.Error())
+	} else {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+	}
 }
 
 func (f *Formatter) PrintSuccess(msg string) {
-	fmt.Fprintf(f.writer, "✓ %s\n", msg)
+	if f.color {
+		pterm.Success.Println(msg)
+	} else {
+		fmt.Fprintf(f.writer, "✓ %s\n", msg)
+	}
+}
+
+func (f *Formatter) PrintWarning(msg string) {
+	if f.color {
+		pterm.Warning.Println(msg)
+	} else {
+		fmt.Fprintf(os.Stderr, "WARNING: %s\n", msg)
+	}
+}
+
+// -----------------------------------------------------------------------------
+// Styled rendering helpers
+// -----------------------------------------------------------------------------
+
+// renderTable renders a list table with a header row.
+func (f *Formatter) renderTable(header []string, rows [][]string) {
+	if f.color {
+		data := pterm.TableData{header}
+		data = append(data, rows...)
+		pterm.DefaultTable.WithHasHeader(true).WithData(data).Render()
+		return
+	}
+	tw := f.tabw()
+	fmt.Fprintln(tw, strings.Join(header, "\t"))
+	seps := make([]string, len(header))
+	for i, h := range header {
+		seps[i] = strings.Repeat("-", max(len(h), 2))
+	}
+	fmt.Fprintln(tw, strings.Join(seps, "\t"))
+	for _, row := range rows {
+		fmt.Fprintln(tw, strings.Join(row, "\t"))
+	}
+	tw.Flush()
+}
+
+// PrintKeyValue renders a detail view with key-value pairs.
+func (f *Formatter) PrintKeyValue(pairs [][2]string) {
+	if f.color {
+		data := pterm.TableData{}
+		for _, p := range pairs {
+			data = append(data, []string{pterm.FgCyan.Sprint(p[0]), p[1]})
+		}
+		pterm.DefaultTable.WithData(data).Render()
+		return
+	}
+	tw := f.tabw()
+	for _, p := range pairs {
+		fmt.Fprintf(tw, "%s\t%s\n", p[0], p[1])
+	}
+	tw.Flush()
+}
+
+// renderSection renders a section header.
+func (f *Formatter) renderSection(title string) {
+	if f.color {
+		pterm.DefaultSection.Println(title)
+	} else {
+		fmt.Fprintf(f.writer, "=== %s ===\n", title)
+	}
+}
+
+// StartSpinner starts a spinner with the given message. Returns nil if color is disabled.
+func (f *Formatter) StartSpinner(msg string) *pterm.SpinnerPrinter {
+	if !f.color {
+		fmt.Fprintln(f.writer, msg)
+		return nil
+	}
+	spinner, _ := pterm.DefaultSpinner.Start(msg)
+	return spinner
+}
+
+// StopSpinner stops a spinner with a success or failure message.
+func (f *Formatter) StopSpinner(spinner *pterm.SpinnerPrinter, success bool, msg string) {
+	if spinner == nil {
+		if success {
+			f.PrintSuccess(msg)
+		} else {
+			fmt.Fprintf(os.Stderr, "Error: %s\n", msg)
+		}
+		return
+	}
+	if success {
+		spinner.Success(msg)
+	} else {
+		spinner.Fail(msg)
+	}
+}
+
+// StartProgressBar starts a progress bar. Returns nil if color is disabled.
+func (f *Formatter) StartProgressBar(total int, title string) *pterm.ProgressbarPrinter {
+	if !f.color {
+		return nil
+	}
+	bar, _ := pterm.DefaultProgressbar.WithTotal(total).WithTitle(title).Start()
+	return bar
 }
 
 // -----------------------------------------------------------------------------
@@ -387,19 +483,17 @@ func (f *Formatter) PrintUserStatistics(stats *models.UserOverallStatistics) {
 }
 
 func (f *Formatter) printUserStatisticsTable(stats *models.UserOverallStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "=== Overall Statistics ===")
-	fmt.Fprintf(tw, "Total Plays:\t%d\n", stats.PlaysCount)
-	fmt.Fprintf(tw, "  On Demand:\t%d\n", stats.PlaysOndemandCount)
-	fmt.Fprintf(tw, "  Live:\t%d\n", stats.PlaysLiveCount)
-	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.DownloadsCount)
-	fmt.Fprintf(tw, "Likes:\t%d\n", stats.LikesCount)
-	fmt.Fprintf(tw, "Followers:\t%d\n", stats.FollowersCount)
-	fmt.Fprintf(tw, "Shows:\t%d\n", stats.ShowsCount)
-	fmt.Fprintf(tw, "Episodes:\t%d\n", stats.EpisodesCount)
-
-	tw.Flush()
+	f.renderSection("Overall Statistics")
+	f.PrintKeyValue([][2]string{
+		{"Total Plays:", fmt.Sprintf("%d", stats.PlaysCount)},
+		{"  On Demand:", fmt.Sprintf("%d", stats.PlaysOndemandCount)},
+		{"  Live:", fmt.Sprintf("%d", stats.PlaysLiveCount)},
+		{"Downloads:", fmt.Sprintf("%d", stats.DownloadsCount)},
+		{"Likes:", fmt.Sprintf("%d", stats.LikesCount)},
+		{"Followers:", fmt.Sprintf("%d", stats.FollowersCount)},
+		{"Shows:", fmt.Sprintf("%d", stats.ShowsCount)},
+		{"Episodes:", fmt.Sprintf("%d", stats.EpisodesCount)},
+	})
 }
 
 // PrintShowStatistics prints show overall statistics.
@@ -416,20 +510,18 @@ func (f *Formatter) PrintShowStatistics(stats *models.ShowOverallStatistics) {
 }
 
 func (f *Formatter) printShowStatisticsTable(stats *models.ShowOverallStatistics) {
-	tw := f.tabw()
-
 	if stats.Title != "" {
-		fmt.Fprintf(tw, "Show:\t%s\n", stats.Title)
+		f.PrintKeyValue([][2]string{{"Show:", stats.Title}})
 	}
-	fmt.Fprintln(tw, "=== Overall Statistics ===")
-	fmt.Fprintf(tw, "Total Plays:\t%d\n", stats.PlaysCount)
-	fmt.Fprintf(tw, "  On Demand:\t%d\n", stats.PlaysOndemandCount)
-	fmt.Fprintf(tw, "  Live:\t%d\n", stats.PlaysLiveCount)
-	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.DownloadsCount)
-	fmt.Fprintf(tw, "Likes:\t%d\n", stats.LikesCount)
-	fmt.Fprintf(tw, "Episodes:\t%d\n", stats.EpisodesCount)
-
-	tw.Flush()
+	f.renderSection("Overall Statistics")
+	f.PrintKeyValue([][2]string{
+		{"Total Plays:", fmt.Sprintf("%d", stats.PlaysCount)},
+		{"  On Demand:", fmt.Sprintf("%d", stats.PlaysOndemandCount)},
+		{"  Live:", fmt.Sprintf("%d", stats.PlaysLiveCount)},
+		{"Downloads:", fmt.Sprintf("%d", stats.DownloadsCount)},
+		{"Likes:", fmt.Sprintf("%d", stats.LikesCount)},
+		{"Episodes:", fmt.Sprintf("%d", stats.EpisodesCount)},
+	})
 }
 
 // PrintEpisodeStatistics prints episode overall statistics.
@@ -446,18 +538,16 @@ func (f *Formatter) PrintEpisodeStatistics(stats *models.EpisodeOverallStatistic
 }
 
 func (f *Formatter) printEpisodeStatisticsTable(stats *models.EpisodeOverallStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "=== Overall Statistics ===")
-	fmt.Fprintf(tw, "Total Plays:\t%d\n", stats.PlaysCount)
-	fmt.Fprintf(tw, "  On Demand:\t%d\n", stats.PlaysOndemandCount)
-	fmt.Fprintf(tw, "  Live:\t%d\n", stats.PlaysLiveCount)
-	fmt.Fprintf(tw, "Downloads:\t%d\n", stats.DownloadsCount)
-	fmt.Fprintf(tw, "Likes:\t%d\n", stats.LikesCount)
-	fmt.Fprintf(tw, "Messages:\t%d\n", stats.MessagesCount)
-	fmt.Fprintf(tw, "Chapters:\t%d\n", stats.ChaptersCount)
-
-	tw.Flush()
+	f.renderSection("Overall Statistics")
+	f.PrintKeyValue([][2]string{
+		{"Total Plays:", fmt.Sprintf("%d", stats.PlaysCount)},
+		{"  On Demand:", fmt.Sprintf("%d", stats.PlaysOndemandCount)},
+		{"  Live:", fmt.Sprintf("%d", stats.PlaysLiveCount)},
+		{"Downloads:", fmt.Sprintf("%d", stats.DownloadsCount)},
+		{"Likes:", fmt.Sprintf("%d", stats.LikesCount)},
+		{"Messages:", fmt.Sprintf("%d", stats.MessagesCount)},
+		{"Chapters:", fmt.Sprintf("%d", stats.ChaptersCount)},
+	})
 }
 
 // PrintPlayStatistics prints time-series play statistics.
@@ -475,17 +565,18 @@ func (f *Formatter) PrintPlayStatistics(stats []models.PlayStatistics) {
 }
 
 func (f *Formatter) printPlayStatisticsTable(stats []models.PlayStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "DATE\tPLAYS\tON DEMAND\tLIVE\tDOWNLOADS")
-	fmt.Fprintln(tw, "----\t-----\t---------\t----\t---------")
-
-	for _, s := range stats {
-		fmt.Fprintf(tw, "%s\t%d\t%d\t%d\t%d\n",
-			s.Date, s.PlaysCount, s.PlaysOndemandCount, s.PlaysLiveCount, s.DownloadsCount)
+	header := []string{"DATE", "PLAYS", "ON DEMAND", "LIVE", "DOWNLOADS"}
+	rows := make([][]string, len(stats))
+	for i, s := range stats {
+		rows[i] = []string{
+			s.Date,
+			fmt.Sprintf("%d", s.PlaysCount),
+			fmt.Sprintf("%d", s.PlaysOndemandCount),
+			fmt.Sprintf("%d", s.PlaysLiveCount),
+			fmt.Sprintf("%d", s.DownloadsCount),
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintDeviceStatistics prints device breakdown statistics.
@@ -503,16 +594,12 @@ func (f *Formatter) PrintDeviceStatistics(stats []models.DeviceStatistics) {
 }
 
 func (f *Formatter) printDeviceStatisticsTable(stats []models.DeviceStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "DEVICE\tPERCENTAGE")
-	fmt.Fprintln(tw, "------\t----------")
-
-	for _, s := range stats {
-		fmt.Fprintf(tw, "%s\t%.1f%%\n", s.Name, s.Percentage)
+	header := []string{"DEVICE", "PERCENTAGE"}
+	rows := make([][]string, len(stats))
+	for i, s := range stats {
+		rows[i] = []string{s.Name, fmt.Sprintf("%.1f%%", s.Percentage)}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintGeographicStatistics prints geographic breakdown statistics.
@@ -533,24 +620,21 @@ func (f *Formatter) PrintGeographicStatistics(stats *models.GeographicStatistics
 }
 
 func (f *Formatter) printGeographicStatisticsTable(stats *models.GeographicStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "=== By Country ===")
-	fmt.Fprintln(tw, "COUNTRY\tPERCENTAGE")
-	fmt.Fprintln(tw, "-------\t----------")
-	for _, c := range stats.Country {
-		fmt.Fprintf(tw, "%s\t%.1f%%\n", c.Name, c.Percentage)
+	f.renderSection("By Country")
+	countryRows := make([][]string, len(stats.Country))
+	for i, c := range stats.Country {
+		countryRows[i] = []string{c.Name, fmt.Sprintf("%.1f%%", c.Percentage)}
 	}
+	f.renderTable([]string{"COUNTRY", "PERCENTAGE"}, countryRows)
 
-	fmt.Fprintln(tw, "")
-	fmt.Fprintln(tw, "=== By City ===")
-	fmt.Fprintln(tw, "CITY\tPERCENTAGE")
-	fmt.Fprintln(tw, "----\t----------")
-	for _, c := range stats.City {
-		fmt.Fprintf(tw, "%s\t%.1f%%\n", c.Name, c.Percentage)
+	fmt.Fprintln(f.writer)
+
+	f.renderSection("By City")
+	cityRows := make([][]string, len(stats.City))
+	for i, c := range stats.City {
+		cityRows[i] = []string{c.Name, fmt.Sprintf("%.1f%%", c.Percentage)}
 	}
-
-	tw.Flush()
+	f.renderTable([]string{"CITY", "PERCENTAGE"}, cityRows)
 }
 
 // PrintSourcesStatistics prints sources breakdown statistics.
@@ -568,16 +652,12 @@ func (f *Formatter) PrintSourcesStatistics(stats *models.SourcesStatistics) {
 }
 
 func (f *Formatter) printSourcesStatisticsTable(stats *models.SourcesStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "SOURCE\tPLAYS\tPERCENTAGE")
-	fmt.Fprintln(tw, "------\t-----\t----------")
-
-	for _, s := range stats.Overall {
-		fmt.Fprintf(tw, "%s\t%d\t%d%%\n", s.Name, s.PlaysCount, s.Percentage)
+	header := []string{"SOURCE", "PLAYS", "PERCENTAGE"}
+	rows := make([][]string, len(stats.Overall))
+	for i, s := range stats.Overall {
+		rows[i] = []string{s.Name, fmt.Sprintf("%d", s.PlaysCount), fmt.Sprintf("%d%%", s.Percentage)}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintListenersStatistics prints time-series listeners statistics.
@@ -595,16 +675,12 @@ func (f *Formatter) PrintListenersStatistics(stats []models.ListenersStatistics)
 }
 
 func (f *Formatter) printListenersStatisticsTable(stats []models.ListenersStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "DATE\tLISTENERS")
-	fmt.Fprintln(tw, "----\t---------")
-
-	for _, s := range stats {
-		fmt.Fprintf(tw, "%s\t%d\n", s.Date, s.ListenersCount)
+	header := []string{"DATE", "LISTENERS"}
+	rows := make([][]string, len(stats))
+	for i, s := range stats {
+		rows[i] = []string{s.Date, fmt.Sprintf("%d", s.ListenersCount)}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintShowsPlayTotals prints play totals for each show.
@@ -622,17 +698,19 @@ func (f *Formatter) PrintShowsPlayTotals(stats []models.ShowPlayTotals) {
 }
 
 func (f *Formatter) printShowsPlayTotalsTable(stats []models.ShowPlayTotals) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "SHOW ID\tTITLE\tPLAYS\tON DEMAND\tLIVE\tDOWNLOADS")
-	fmt.Fprintln(tw, "-------\t-----\t-----\t---------\t----\t---------")
-
-	for _, s := range stats {
-		fmt.Fprintf(tw, "%d\t%s\t%d\t%d\t%d\t%d\n",
-			s.ShowID, truncate(s.Title, 30), s.PlaysCount, s.PlaysOndemandCount, s.PlaysLiveCount, s.DownloadsCount)
+	header := []string{"SHOW ID", "TITLE", "PLAYS", "ON DEMAND", "LIVE", "DOWNLOADS"}
+	rows := make([][]string, len(stats))
+	for i, s := range stats {
+		rows[i] = []string{
+			fmt.Sprintf("%d", s.ShowID),
+			truncate(s.Title, 30),
+			fmt.Sprintf("%d", s.PlaysCount),
+			fmt.Sprintf("%d", s.PlaysOndemandCount),
+			fmt.Sprintf("%d", s.PlaysLiveCount),
+			fmt.Sprintf("%d", s.DownloadsCount),
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintEpisodesPlayTotals prints play totals for each episode.
@@ -650,17 +728,19 @@ func (f *Formatter) PrintEpisodesPlayTotals(stats []models.EpisodePlayTotals) {
 }
 
 func (f *Formatter) printEpisodesPlayTotalsTable(stats []models.EpisodePlayTotals) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "EPISODE ID\tTITLE\tPLAYS\tON DEMAND\tLIVE\tDOWNLOADS")
-	fmt.Fprintln(tw, "----------\t-----\t-----\t---------\t----\t---------")
-
-	for _, s := range stats {
-		fmt.Fprintf(tw, "%d\t%s\t%d\t%d\t%d\t%d\n",
-			s.EpisodeID, truncate(s.Title, 30), s.PlaysCount, s.PlaysOndemandCount, s.PlaysLiveCount, s.DownloadsCount)
+	header := []string{"EPISODE ID", "TITLE", "PLAYS", "ON DEMAND", "LIVE", "DOWNLOADS"}
+	rows := make([][]string, len(stats))
+	for i, s := range stats {
+		rows[i] = []string{
+			fmt.Sprintf("%d", s.EpisodeID),
+			truncate(s.Title, 30),
+			fmt.Sprintf("%d", s.PlaysCount),
+			fmt.Sprintf("%d", s.PlaysOndemandCount),
+			fmt.Sprintf("%d", s.PlaysLiveCount),
+			fmt.Sprintf("%d", s.DownloadsCount),
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintLikesStatistics prints time-series likes statistics.
@@ -678,16 +758,12 @@ func (f *Formatter) PrintLikesStatistics(stats []models.LikesStatistics) {
 }
 
 func (f *Formatter) printLikesStatisticsTable(stats []models.LikesStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "DATE\tLIKES")
-	fmt.Fprintln(tw, "----\t-----")
-
-	for _, s := range stats {
-		fmt.Fprintf(tw, "%s\t%d\n", s.Date, s.LikesCount)
+	header := []string{"DATE", "LIKES"}
+	rows := make([][]string, len(stats))
+	for i, s := range stats {
+		rows[i] = []string{s.Date, fmt.Sprintf("%d", s.LikesCount)}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintFollowersStatistics prints time-series followers statistics.
@@ -705,16 +781,12 @@ func (f *Formatter) PrintFollowersStatistics(stats []models.FollowersStatistics)
 }
 
 func (f *Formatter) printFollowersStatisticsTable(stats []models.FollowersStatistics) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "DATE\tFOLLOWERS")
-	fmt.Fprintln(tw, "----\t---------")
-
-	for _, s := range stats {
-		fmt.Fprintf(tw, "%s\t%d\n", s.Date, s.FollowersCount)
+	header := []string{"DATE", "FOLLOWERS"}
+	rows := make([][]string, len(stats))
+	for i, s := range stats {
+		rows[i] = []string{s.Date, fmt.Sprintf("%d", s.FollowersCount)}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // PrintOSStatistics prints operating system breakdown statistics.
@@ -735,24 +807,21 @@ func (f *Formatter) PrintOSStatistics(stats *models.OSStatisticsBreakdown) {
 }
 
 func (f *Formatter) printOSStatisticsTable(stats *models.OSStatisticsBreakdown) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "=== Desktop ===")
-	fmt.Fprintln(tw, "OS\tPERCENTAGE")
-	fmt.Fprintln(tw, "--\t----------")
-	for _, s := range stats.Desktop {
-		fmt.Fprintf(tw, "%s\t%.1f%%\n", s.Name, s.Percentage)
+	f.renderSection("Desktop")
+	desktopRows := make([][]string, len(stats.Desktop))
+	for i, s := range stats.Desktop {
+		desktopRows[i] = []string{s.Name, fmt.Sprintf("%.1f%%", s.Percentage)}
 	}
+	f.renderTable([]string{"OS", "PERCENTAGE"}, desktopRows)
 
-	fmt.Fprintln(tw, "")
-	fmt.Fprintln(tw, "=== Mobile ===")
-	fmt.Fprintln(tw, "OS\tPERCENTAGE")
-	fmt.Fprintln(tw, "--\t----------")
-	for _, s := range stats.Mobile {
-		fmt.Fprintf(tw, "%s\t%.1f%%\n", s.Name, s.Percentage)
+	fmt.Fprintln(f.writer)
+
+	f.renderSection("Mobile")
+	mobileRows := make([][]string, len(stats.Mobile))
+	for i, s := range stats.Mobile {
+		mobileRows[i] = []string{s.Name, fmt.Sprintf("%.1f%%", s.Percentage)}
 	}
-
-	tw.Flush()
+	f.renderTable([]string{"OS", "PERCENTAGE"}, mobileRows)
 }
 
 // PrintExploreShows prints a list of shows from explore endpoints.
@@ -770,20 +839,16 @@ func (f *Formatter) PrintExploreShows(shows []models.ExploreShow) {
 }
 
 func (f *Formatter) printExploreShowsTable(shows []models.ExploreShow) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "ID\tTITLE\tURL")
-	fmt.Fprintln(tw, "--\t-----\t---")
-
-	for _, s := range shows {
-		fmt.Fprintf(tw, "%d\t%s\t%s\n",
-			s.ShowID,
+	header := []string{"ID", "TITLE", "URL"}
+	rows := make([][]string, len(shows))
+	for i, s := range shows {
+		rows[i] = []string{
+			fmt.Sprintf("%d", s.ShowID),
 			truncate(s.Title, 40),
 			s.SiteURL,
-		)
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 
@@ -805,20 +870,20 @@ func (f *Formatter) PrintCategories(categories []models.Category) {
 }
 
 func (f *Formatter) printCategoriesTable(categories []models.Category) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "ID\tNAME\tLEVEL")
-	fmt.Fprintln(tw, "--\t----\t-----")
-
-	for _, c := range categories {
-		levelIndicator := ""
+	header := []string{"ID", "NAME", "LEVEL"}
+	rows := make([][]string, len(categories))
+	for i, c := range categories {
+		name := c.Name
 		if c.Level == 2 {
-			levelIndicator = "  └─ " // Indent subcategories
+			name = "  └─ " + name
 		}
-		fmt.Fprintf(tw, "%d\t%s%s\t%d\n", c.CategoryID, levelIndicator, c.Name, c.Level)
+		rows[i] = []string{
+			fmt.Sprintf("%d", c.CategoryID),
+			name,
+			fmt.Sprintf("%d", c.Level),
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 func (f *Formatter) PrintGooglePlayCategories(categories []models.GooglePlayCategory) {
@@ -835,16 +900,12 @@ func (f *Formatter) PrintGooglePlayCategories(categories []models.GooglePlayCate
 }
 
 func (f *Formatter) printGooglePlayCategoriesTable(categories []models.GooglePlayCategory) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "ID\tNAME")
-	fmt.Fprintln(tw, "--\t----")
-
-	for _, c := range categories {
-		fmt.Fprintf(tw, "%d\t%s\n", c.CategoryID, c.Name)
+	header := []string{"ID", "NAME"}
+	rows := make([][]string, len(categories))
+	for i, c := range categories {
+		rows[i] = []string{fmt.Sprintf("%d", c.CategoryID), c.Name}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 func (f *Formatter) PrintLanguages(languages []models.Language) {
@@ -861,16 +922,12 @@ func (f *Formatter) PrintLanguages(languages []models.Language) {
 }
 
 func (f *Formatter) printLanguagesTable(languages []models.Language) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "CODE\tLANGUAGE")
-	fmt.Fprintln(tw, "----\t--------")
-
-	for _, l := range languages {
-		fmt.Fprintf(tw, "%s\t%s\n", l.Code, l.Name)
+	header := []string{"CODE", "LANGUAGE"}
+	rows := make([][]string, len(languages))
+	for i, l := range languages {
+		rows[i] = []string{l.Code, l.Name}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 
@@ -892,26 +949,19 @@ func (f *Formatter) PrintCuepoints(cuepoints []models.Cuepoint) {
 }
 
 func (f *Formatter) printCuepointsTable(cuepoints []models.Cuepoint) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "TIMECODE (ms)\tTIME\tMAX ADS")
-	fmt.Fprintln(tw, "-------------\t----\t-------")
-
-	for _, c := range cuepoints {
-		// Convert milliseconds to human-readable time (mm:ss)
+	header := []string{"TIMECODE (ms)", "TIME", "MAX ADS"}
+	rows := make([][]string, len(cuepoints))
+	for i, c := range cuepoints {
 		totalSeconds := c.Timecode / 1000
 		minutes := totalSeconds / 60
 		seconds := totalSeconds % 60
-		timeStr := fmt.Sprintf("%d:%02d", minutes, seconds)
-
-		fmt.Fprintf(tw, "%d\t%s\t%d\n",
-			c.Timecode,
-			timeStr,
-			c.AdsMaxCount,
-		)
+		rows[i] = []string{
+			fmt.Sprintf("%d", c.Timecode),
+			fmt.Sprintf("%d:%02d", minutes, seconds),
+			fmt.Sprintf("%d", c.AdsMaxCount),
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // -----------------------------------------------------------------------------
@@ -932,33 +982,27 @@ func (f *Formatter) PrintChapters(chapters []models.Chapter) {
 }
 
 func (f *Formatter) printChaptersTable(chapters []models.Chapter) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "ID\tSTARTS AT (ms)\tTIME\tTITLE\tURL")
-	fmt.Fprintln(tw, "--\t--------------\t----\t-----\t---")
-
-	for _, c := range chapters {
-		// Convert milliseconds to human-readable time (mm:ss)
+	header := []string{"ID", "STARTS AT (ms)", "TIME", "TITLE", "URL"}
+	rows := make([][]string, len(chapters))
+	for i, c := range chapters {
 		totalSeconds := c.StartsAt / 1000
 		minutes := totalSeconds / 60
 		seconds := totalSeconds % 60
-		timeStr := fmt.Sprintf("%d:%02d", minutes, seconds)
 
 		url := c.ExternalURL
 		if url == "" {
 			url = "-"
 		}
 
-		fmt.Fprintf(tw, "%d\t%d\t%s\t%s\t%s\n",
-			c.ChapterID,
-			c.StartsAt,
-			timeStr,
+		rows[i] = []string{
+			fmt.Sprintf("%d", c.ChapterID),
+			fmt.Sprintf("%d", c.StartsAt),
+			fmt.Sprintf("%d:%02d", minutes, seconds),
 			truncate(c.Title, 40),
 			truncate(url, 40),
-		)
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }
 
 // -----------------------------------------------------------------------------
@@ -984,12 +1028,9 @@ func (f *Formatter) PrintMessages(messages []models.Message) {
 }
 
 func (f *Formatter) printMessagesTable(messages []models.Message) {
-	tw := f.tabw()
-
-	fmt.Fprintln(tw, "ID\tAUTHOR\tDATE\tMESSAGE")
-	fmt.Fprintln(tw, "--\t------\t----\t-------")
-
-	for _, m := range messages {
+	header := []string{"ID", "AUTHOR", "DATE", "MESSAGE"}
+	rows := make([][]string, len(messages))
+	for i, m := range messages {
 		date := m.CreatedAt
 		if len(date) > 10 {
 			date = date[:10]
@@ -1000,13 +1041,12 @@ func (f *Formatter) printMessagesTable(messages []models.Message) {
 			author = author + " ★"
 		}
 
-		fmt.Fprintf(tw, "%d\t%s\t%s\t%s\n",
-			m.MessageID,
+		rows[i] = []string{
+			fmt.Sprintf("%d", m.MessageID),
 			truncate(author, 20),
 			date,
 			truncate(m.Text, 50),
-		)
+		}
 	}
-
-	tw.Flush()
+	f.renderTable(header, rows)
 }

@@ -79,7 +79,7 @@ func TestNew_FormatSelection(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {
-			f := New(tt.input)
+			f := New(tt.input, false)
 			if f.format != tt.want {
 				t.Errorf("New(%q).format = %q, want %q", tt.input, f.format, tt.want)
 			}
@@ -92,7 +92,7 @@ func TestNew_FormatSelection(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 func newTestFormatter(format string) (*Formatter, *bytes.Buffer) {
-	f := New(format)
+	f := New(format, false)
 	buf := &bytes.Buffer{}
 	f.writer = buf
 	return f, buf

@@ -13,6 +13,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
 	"github.com/G10xy/spreaker-and-go/internal/api"
@@ -33,7 +34,7 @@ You'll need an API token from your Spreaker developer settings.`,
 
 
 func runLogin(cmd *cobra.Command, args []string) error {
-	fmt.Print("Enter your Spreaker API token: ")
+	pterm.FgYellow.Print("Enter your Spreaker API token: ")
 
 	var token string
 	if _, err := fmt.Scanln(&token); err != nil {
@@ -51,12 +52,12 @@ func runLogin(cmd *cobra.Command, args []string) error {
 		return fmt.Errorf("invalid token: %w", err)
 	}
 
-
 	if err := config.SaveToken(token, user.UserID); err != nil {
 		return fmt.Errorf("failed to save token: %w", err)
 	}
 
-	fmt.Printf("✓ Logged in as %s (@%s)\n", user.Fullname, user.Username)
-	fmt.Printf("  Token saved to %s\n", config.ConfigFilePath())
+	formatter := getFormatter(cmd)
+	formatter.PrintSuccess(fmt.Sprintf("Logged in as %s (@%s)", user.Fullname, user.Username))
+	formatter.PrintMessage(fmt.Sprintf("Token saved to %s", config.ConfigFilePath()))
 	return nil
 }

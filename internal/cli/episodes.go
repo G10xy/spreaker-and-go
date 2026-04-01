@@ -219,7 +219,7 @@ func runEpisodesUpload(cmd *cobra.Command, args []string) error {
 	}
 
 	formatter := getFormatter(cmd)
-	formatter.PrintMessage(fmt.Sprintf("Uploading %s...", audioFile))
+	spinner := formatter.StartSpinner(fmt.Sprintf("Uploading %s...", audioFile))
 
 	episode, err := client.UploadEpisode(showID, api.UploadEpisodeParams{
 		Title:           title,
@@ -230,10 +230,11 @@ func runEpisodesUpload(cmd *cobra.Command, args []string) error {
 		DownloadEnabled: downloadable,
 	})
 	if err != nil {
+		formatter.StopSpinner(spinner, false, err.Error())
 		return err
 	}
 
-	formatter.PrintSuccess("Episode uploaded!")
+	formatter.StopSpinner(spinner, true, "Episode uploaded!")
 	formatter.PrintEpisode(episode)
 	return nil
 }
@@ -268,7 +269,8 @@ func runEpisodesDelete(cmd *cobra.Command, args []string) error {
 	if !force {
 		prompt := fmt.Sprintf("Are you sure you want to delete episode %d? [y/N]: ", episodeID)
 		if !confirmAction(prompt) {
-			fmt.Println("Cancelled.")
+			formatter := getFormatter(cmd)
+			formatter.PrintMessage("Cancelled.")
 			return nil
 		}
 	}
@@ -363,13 +365,14 @@ func runEpisodesDownload(cmd *cobra.Command, args []string) error {
 		}
 	}
 
-	formatter.PrintMessage(fmt.Sprintf("Downloading episode %d to %s...", episodeID, outputPath))
+	spinner := formatter.StartSpinner(fmt.Sprintf("Downloading episode %d to %s...", episodeID, outputPath))
 
 	if err := downloadFile(downloadURL, outputPath); err != nil {
+		formatter.StopSpinner(spinner, false, fmt.Sprintf("Download failed: %v", err))
 		return fmt.Errorf("download failed: %w", err)
 	}
 
-	formatter.PrintSuccess(fmt.Sprintf("Downloaded to %s", outputPath))
+	formatter.StopSpinner(spinner, true, fmt.Sprintf("Downloaded to %s", outputPath))
 	return nil
 }
 
@@ -392,12 +395,10 @@ func downloadFile(downloadURL, destPath string) error {
 		return fmt.Errorf("server returned status %d", resp.StatusCode)
 	}
 
-	written, err := io.Copy(out, resp.Body)
+	_, err = io.Copy(out, resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
-
-	fmt.Printf("  Size: %.2f MB\n", float64(written)/(1024*1024))
 
 	return nil
 }

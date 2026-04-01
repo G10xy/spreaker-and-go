@@ -44,6 +44,7 @@ Get started:
 	// PersistentFlags() makes them "inherited" by children.
 	cmd.PersistentFlags().StringP("output", "o", "", "Output format: table, json, plain")
 	cmd.PersistentFlags().String("token", "", "API token (overrides config)")
+	cmd.PersistentFlags().Bool("no-color", false, "Disable colored output")
 
 	cmd.AddCommand(
 		newLoginCmd(),

@@ -151,7 +151,8 @@ func runShowsDelete(cmd *cobra.Command, args []string) error {
 	if !force {
 		prompt := fmt.Sprintf("Are you sure you want to delete show %d? [y/N]: ", showID)
 		if !confirmAction(prompt) {
-			fmt.Println("Cancelled.")
+			formatter := getFormatter(cmd)
+			formatter.PrintMessage("Cancelled.")
 			return nil
 		}
 	}

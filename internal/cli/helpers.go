@@ -9,7 +9,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 
 	"github.com/G10xy/spreaker-and-go/internal/api"
 	"github.com/G10xy/spreaker-and-go/internal/config"
@@ -22,7 +24,7 @@ func getClient(cmd *cobra.Command) (*api.Client, error) {
 	token, _ := cmd.Flags().GetString("token")
 
 	if token != "" {
-		fmt.Fprintln(os.Stderr, "WARNING: passing tokens via --token exposes them in process listings. Use SPREAKER_TOKEN env var or 'spreaker login' instead.")
+		pterm.Warning.Println("Passing tokens via --token exposes them in process listings. Use SPREAKER_TOKEN env var or 'spreaker login' instead.")
 	}
 
 	// Fall back to config (which also checks env vars)
@@ -50,7 +52,40 @@ func getFormatter(cmd *cobra.Command) *output.Formatter {
 		format = cfg.OutputFormat
 	}
 
-	return output.New(format)
+	color := resolveColor(cmd, format)
+	if !color {
+		pterm.DisableColor()
+	} else {
+		pterm.EnableColor()
+	}
+
+	return output.New(format, color)
+}
+
+// resolveColor determines whether color output should be enabled.
+func resolveColor(cmd *cobra.Command, format string) bool {
+	// Only table format gets color
+	if format != "" && format != "table" {
+		return false
+	}
+
+	// Respect --no-color flag
+	noColor, _ := cmd.Flags().GetBool("no-color")
+	if noColor {
+		return false
+	}
+
+	// Respect NO_COLOR env var (https://no-color.org/)
+	if _, ok := os.LookupEnv("NO_COLOR"); ok {
+		return false
+	}
+
+	// Only color when stdout is a terminal
+	if !term.IsTerminal(int(os.Stdout.Fd())) {
+		return false
+	}
+
+	return true
 }
 
 
@@ -90,7 +125,7 @@ func parseIntArg(arg string, fieldName string) (int, error) {
 
 // confirmAction prompts the user for confirmation.
 func confirmAction(prompt string) bool {
-	fmt.Print(prompt)
+	pterm.FgYellow.Print(prompt)
 	var confirm string
 	fmt.Scanln(&confirm)
 	return confirm == "y" || confirm == "Y"
