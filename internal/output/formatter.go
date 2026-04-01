@@ -30,6 +30,17 @@ const (
 	FormatPlain Format = "plain"
 )
 
+var rgbPalette = []pterm.RGB{
+	pterm.NewRGB(255, 99, 132),  // red-pink
+	pterm.NewRGB(255, 159, 64),  // orange
+	pterm.NewRGB(255, 205, 86),  // yellow
+	pterm.NewRGB(75, 192, 192),  // teal
+	pterm.NewRGB(54, 162, 235),  // blue
+	pterm.NewRGB(153, 102, 255), // purple
+	pterm.NewRGB(102, 255, 153), // green
+	pterm.NewRGB(144, 238, 144), // light green
+}
+
 type Formatter struct {
 	format Format
 	writer io.Writer
@@ -349,7 +360,11 @@ func (f *Formatter) PrintWarning(msg string) {
 // renderTable renders a list table with a header row.
 func (f *Formatter) renderTable(header []string, rows [][]string) {
 	if f.color {
-		data := pterm.TableData{header}
+		coloredHeader := make([]string, len(header))
+		for i, h := range header {
+			coloredHeader[i] = rgbPalette[i%len(rgbPalette)].Sprint(h)
+		}
+		data := pterm.TableData{coloredHeader}
 		data = append(data, rows...)
 		pterm.DefaultTable.WithHasHeader(true).WithData(data).Render()
 		return
@@ -371,8 +386,8 @@ func (f *Formatter) renderTable(header []string, rows [][]string) {
 func (f *Formatter) PrintKeyValue(pairs [][2]string) {
 	if f.color {
 		data := pterm.TableData{}
-		for _, p := range pairs {
-			data = append(data, []string{pterm.FgCyan.Sprint(p[0]), p[1]})
+		for i, p := range pairs {
+			data = append(data, []string{rgbPalette[i%len(rgbPalette)].Sprint(p[0]), p[1]})
 		}
 		pterm.DefaultTable.WithData(data).Render()
 		return
