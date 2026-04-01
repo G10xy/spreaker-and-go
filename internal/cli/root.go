@@ -11,14 +11,16 @@ file with a constructor function (e.g., newShowsCmd()).
 package cli
 
 import (
+	"context"
+
 	"github.com/spf13/cobra"
 )
 
 var rootCmd *cobra.Command
 
-func Execute(version string) error {
+func Execute(ctx context.Context, version string) error {
 	rootCmd = newRootCmd(version)
-	return rootCmd.Execute()
+	return rootCmd.ExecuteContext(ctx)
 }
 
 // newRootCmd creates the root command with all subcommands registered.
@@ -37,13 +39,17 @@ Get started:
   spreaker episodes list  # List episodes`,
 		Version: version,
 		// SilenceUsage prevents printing usage on errors.
-		SilenceUsage: true,
+		// SilenceErrors prevents Cobra from double-printing errors
+		// that are already displayed by spinners or formatters.
+		SilenceUsage:  true,
+		SilenceErrors: true,
 	}
 
 	// Global flags are available to ALL subcommands.
 	// PersistentFlags() makes them "inherited" by children.
 	cmd.PersistentFlags().StringP("output", "o", "", "Output format: table, json, plain")
-	cmd.PersistentFlags().String("token", "", "API token (overrides config)")
+	cmd.PersistentFlags().String("token", "", "API token (overrides config) — INSECURE: visible in process listings, prefer SPREAKER_TOKEN env var")
+	cmd.PersistentFlags().MarkHidden("token")
 	cmd.PersistentFlags().Bool("no-color", false, "Disable colored output")
 
 	cmd.AddCommand(
