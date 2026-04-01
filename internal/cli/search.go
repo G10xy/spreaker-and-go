@@ -63,6 +63,9 @@ func runSearchShows(cmd *cobra.Command, args []string) error {
 
 	limit, _ := cmd.Flags().GetInt("limit")
 	filter, _ := cmd.Flags().GetString("filter")
+	if err := validateFilter(filter); err != nil {
+		return err
+	}
 
 	result, err := client.SearchShows(
 		api.SearchParams{Query: query, Filter: filter},
@@ -116,6 +119,9 @@ func runSearchEpisodes(cmd *cobra.Command, args []string) error {
 
 	limit, _ := cmd.Flags().GetInt("limit")
 	filter, _ := cmd.Flags().GetString("filter")
+	if err := validateFilter(filter); err != nil {
+		return err
+	}
 
 	result, err := client.SearchEpisodes(
 		api.SearchParams{Query: query, Filter: filter},
@@ -173,6 +179,9 @@ func runSearchUserShows(cmd *cobra.Command, args []string) error {
 
 	limit, _ := cmd.Flags().GetInt("limit")
 	filter, _ := cmd.Flags().GetString("filter")
+	if err := validateFilter(filter); err != nil {
+		return err
+	}
 
 	result, err := client.SearchUserShows(
 		userID,
@@ -231,6 +240,9 @@ func runSearchUserEpisodes(cmd *cobra.Command, args []string) error {
 
 	limit, _ := cmd.Flags().GetInt("limit")
 	filter, _ := cmd.Flags().GetString("filter")
+	if err := validateFilter(filter); err != nil {
+		return err
+	}
 
 	result, err := client.SearchUserEpisodes(
 		userID,
@@ -289,6 +301,9 @@ func runSearchShowEpisodes(cmd *cobra.Command, args []string) error {
 
 	limit, _ := cmd.Flags().GetInt("limit")
 	filter, _ := cmd.Flags().GetString("filter")
+	if err := validateFilter(filter); err != nil {
+		return err
+	}
 
 	result, err := client.SearchShowEpisodes(
 		showID,

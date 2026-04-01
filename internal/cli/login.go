@@ -11,9 +11,11 @@ Keeping it separate means:
 package cli
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
-	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
 
 	"github.com/G10xy/spreaker-and-go/internal/api"
@@ -34,12 +36,17 @@ You'll need an API token from your Spreaker developer settings.`,
 
 
 func runLogin(cmd *cobra.Command, args []string) error {
-	pterm.FgYellow.Print("Enter your Spreaker API token: ")
+	// Use plain fmt to avoid ANSI codes before color mode is resolved.
+	fmt.Print("Enter your Spreaker API token: ")
 
-	var token string
-	if _, err := fmt.Scanln(&token); err != nil {
-		return fmt.Errorf("failed to read token: %w", err)
+	scanner := bufio.NewScanner(os.Stdin)
+	if !scanner.Scan() {
+		if err := scanner.Err(); err != nil {
+			return fmt.Errorf("failed to read token: %w", err)
+		}
+		return fmt.Errorf("no input received")
 	}
+	token := strings.TrimSpace(scanner.Text())
 
 	if token == "" {
 		return fmt.Errorf("token cannot be empty")

@@ -24,7 +24,7 @@ func getClient(cmd *cobra.Command) (*api.Client, error) {
 	token, _ := cmd.Flags().GetString("token")
 
 	if token != "" {
-		pterm.Warning.Println("Passing tokens via --token exposes them in process listings. Use SPREAKER_TOKEN env var or 'spreaker login' instead.")
+		fmt.Fprintln(os.Stderr, "WARNING: Passing tokens via --token exposes them in process listings. Use SPREAKER_TOKEN env var or 'spreaker login' instead.")
 	}
 
 	// Fall back to config (which also checks env vars)
@@ -37,7 +37,10 @@ func getClient(cmd *cobra.Command) (*api.Client, error) {
 	}
 
 	// Load config for other settings (base URL, timeout, etc.)
-	cfg, _ := config.Load()
+	cfg, err := config.Load()
+	if err != nil {
+		return nil, fmt.Errorf("failed to load config: %w", err)
+	}
 
 	return api.NewClientWithOptions(token, cfg.APIURL, 0), nil
 }
@@ -48,7 +51,10 @@ func getFormatter(cmd *cobra.Command) *output.Formatter {
 
 	// Fall back to configured default
 	if format == "" {
-		cfg, _ := config.Load()
+		cfg, err := config.Load()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not load config: %v\n", err)
+		}
 		format = cfg.OutputFormat
 	}
 
@@ -123,10 +129,26 @@ func parseIntArg(arg string, fieldName string) (int, error) {
     return n, nil
 }
 
+// validateFilter checks that the filter flag value is one of the allowed values.
+func validateFilter(filter string) error {
+	if filter == "" {
+		return nil
+	}
+	switch filter {
+	case "listenable", "editable":
+		return nil
+	default:
+		return fmt.Errorf("invalid filter %q: must be 'listenable' or 'editable'", filter)
+	}
+}
+
 // confirmAction prompts the user for confirmation.
 func confirmAction(prompt string) bool {
 	pterm.FgYellow.Print(prompt)
 	var confirm string
-	fmt.Scanln(&confirm)
+	if _, err := fmt.Scanln(&confirm); err != nil {
+		fmt.Fprintln(os.Stderr, "No input received, aborting.")
+		return false
+	}
 	return confirm == "y" || confirm == "Y"
 }
