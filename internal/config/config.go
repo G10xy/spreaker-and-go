@@ -128,13 +128,16 @@ func Save(cfg *Config) error {
 		return err
 	}
 
+	// Create the file with restricted permissions atomically (0600)
+	// to avoid a TOCTOU race where the file is briefly world-readable.
+	f, err := os.OpenFile(configPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	if err != nil {
+		return fmt.Errorf("could not create config file: %w", err)
+	}
+	defer f.Close()
+
 	if err := viper.WriteConfigAs(configPath); err != nil {
 		return fmt.Errorf("could not write config file: %w", err)
-	}
-
-	// Ensure the config file is only readable by the owner (contains token)
-	if err := os.Chmod(configPath, 0600); err != nil {
-		return fmt.Errorf("could not set config file permissions: %w", err)
 	}
 
 	return nil

@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -19,15 +21,18 @@ const (
 	DefaultBaseURL    = "https://api.spreaker.com"
 	DefaultAPIVersion = "v2"
 	DefaultTimeout    = 30 * time.Second
+
+	// maxResponseSize is the maximum allowed API response body size (10 MB).
+	maxResponseSize = 10 << 20
 )
 
 
 type Client struct {
-	BaseURL string
+	BaseURL    string
 	APIVersion string
-	Token string
+	token      string
 	HTTPClient *http.Client
-	UserAgent string
+	UserAgent  string
 }
 
 // NewClient creates a new Spreaker API client with the given OAuth token.
@@ -36,7 +41,7 @@ func NewClient(token string) *Client {
 	return &Client{
 		BaseURL:    DefaultBaseURL,
 		APIVersion: DefaultAPIVersion,
-		Token:      token,
+		token:      token,
 		HTTPClient: &http.Client{
 			Timeout: DefaultTimeout,
 		},
@@ -120,12 +125,12 @@ type paginatedResponse struct {
 // -----------------------------------------------------------------------------
 
 func (c *Client) buildURL(path string) string {
-	return fmt.Sprintf("%s/%s%s", c.BaseURL, c.APIVersion, path)
+	return fmt.Sprintf("%s/%s%s", strings.TrimRight(c.BaseURL, "/"), c.APIVersion, path)
 }
 
 // newRequest creates a new HTTP request with common headers set.
 func (c *Client) newRequest(method, urlStr string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequest(method, urlStr, body)
+	req, err := http.NewRequestWithContext(context.TODO(), method, urlStr, body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
@@ -135,8 +140,8 @@ func (c *Client) newRequest(method, urlStr string, body io.Reader) (*http.Reques
 	req.Header.Set("Accept", "application/json")
 
 	// Set authorization header if we have a token
-	if c.Token != "" {
-		req.Header.Set("Authorization", "Bearer "+c.Token)
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 
 	return req, nil
@@ -151,8 +156,8 @@ func (c *Client) do(req *http.Request, result interface{}) error {
 	}
 	defer resp.Body.Close()
 
-	// Read the entire response body
-	body, err := io.ReadAll(resp.Body)
+	// Read the response body with a size cap to prevent memory exhaustion.
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return fmt.Errorf("failed to read response: %w", err)
 	}
@@ -373,7 +378,7 @@ func GetPaginated[T any](c *Client, path string, params map[string]string) (*Pag
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseSize))
 	if err != nil {
 		return nil, fmt.Errorf("failed to read response: %w", err)
 	}
@@ -426,7 +431,7 @@ func (p PaginationParams) ToMap() map[string]string {
 
 
 func (c *Client) CheckAuth() error {
-    if c.Token == "" {
+    if c.token == "" {
         return fmt.Errorf("authentication required: this endpoint requires an OAuth token")
     }
     return nil

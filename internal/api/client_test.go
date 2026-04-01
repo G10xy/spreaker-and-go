@@ -72,8 +72,8 @@ func TestNewClient(t *testing.T) {
 	if c.APIVersion != DefaultAPIVersion {
 		t.Errorf("APIVersion = %q, want %q", c.APIVersion, DefaultAPIVersion)
 	}
-	if c.Token != "tok123" {
-		t.Errorf("Token = %q, want %q", c.Token, "tok123")
+	if c.token != "tok123" {
+		t.Errorf("token = %q, want %q", c.token, "tok123")
 	}
 	if c.HTTPClient.Timeout != DefaultTimeout {
 		t.Errorf("Timeout = %v, want %v", c.HTTPClient.Timeout, DefaultTimeout)
