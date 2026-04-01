@@ -356,6 +356,7 @@ func runEpisodesDownload(cmd *cobra.Command, args []string) error {
 			outputPath = sanitizeFilename(episode.Title) + ".mp3"
 		}
 	}
+	outputPath = filepath.Clean(outputPath)
 
 	// Ensure directory exists if path contains directories
 	dir := filepath.Dir(outputPath)
@@ -492,6 +493,7 @@ func runEpisodesDownloadAll(cmd *cobra.Command, args []string) error {
 	if outputDir == "" {
 		outputDir = sanitizeFilename(show.Title)
 	}
+	outputDir = filepath.Clean(outputDir)
 
 	// Create output directory
 	if err := os.MkdirAll(outputDir, 0755); err != nil {

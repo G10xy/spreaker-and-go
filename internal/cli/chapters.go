@@ -303,22 +303,39 @@ func runChaptersDelete(cmd *cobra.Command, args []string) error {
 // -----------------------------------------------------------------------------
 
 func newChaptersDeleteAllCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "delete-all <episode-id>",
 		Short: "Delete all chapters from an episode",
 		Long: `Delete all chapters from an episode.
 
+WARNING: This action cannot be undone.
+
 Examples:
-  spreaker chapters delete-all 12345`,
+  spreaker chapters delete-all 12345
+  spreaker chapters delete-all 12345 --force`,
 		Args: cobra.ExactArgs(1),
 		RunE: runChaptersDeleteAll,
 	}
+
+	cmd.Flags().BoolP("force", "f", false, "Skip confirmation prompt")
+
+	return cmd
 }
 
 func runChaptersDeleteAll(cmd *cobra.Command, args []string) error {
 	episodeID, err := parseEpisodeID(args[0])
 	if err != nil {
 		return err
+	}
+
+	force, _ := cmd.Flags().GetBool("force")
+	if !force {
+		prompt := fmt.Sprintf("Are you sure you want to delete all chapters from episode %d? [y/N]: ", episodeID)
+		if !confirmAction(prompt) {
+			formatter := getFormatter(cmd)
+			formatter.PrintMessage("Cancelled.")
+			return nil
+		}
 	}
 
 	client, err := getClient(cmd)
